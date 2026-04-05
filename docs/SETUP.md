@@ -1,257 +1,228 @@
 # Development Setup Guide
 
-This guide will help you set up urban-garbanzo for local development.
+This guide reflects the current implementation of urban-garbanzo: a FastAPI service backed by Tortoise ORM, PostgreSQL, Aerich migrations, and an async pytest suite.
 
-## System Requirements
+## Requirements
 
-- **Python**: 3.10 or higher (check with `python --version`)
-- **PostgreSQL**: 13+ (optional, SQLite works for development)
-- **pip**: Python package manager (comes with Python)
-- **git**: Version control (comes pre-installed on most systems)
+- Python 3.10+
+- Docker Desktop or local PostgreSQL
+- Git
 
-## Step-by-Step Setup
-
-### Step 1: Clone and Enter Repository
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Shreyas-Ashtamkar/urban-garbanzo.git
 cd urban-garbanzo
 ```
 
-### Step 2: Create Virtual Environment
+## 2. Create a Virtual Environment
 
-**macOS/Linux:**
+macOS/Linux:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-**Windows (PowerShell):**
+Windows PowerShell:
+
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-**Windows (Command Prompt):**
-```cmd
-python -m venv venv
-venv\Scripts\activate.bat
-```
+## 3. Install Dependencies
 
-You should see `(venv)` in your terminal prompt when activated.
-
-### Step 3: Install Dependencies
-
-**Quick install** (production only):
-```bash
-pip install -r requirements.txt
-```
-
-**Full install** (recommended for development):
 ```bash
 pip install -r requirements-dev.txt
 ```
 
-Or using Make:
+Or use:
+
 ```bash
 make install-dev
 ```
 
-### Step 4: Set Up Environment Variables
+## 4. Create the Environment File
+
+Windows PowerShell:
+
+```powershell
+copy .env.example .env
+```
+
+macOS/Linux:
 
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and configure:
-- `DATABASE_URL`: Keep as-is for SQLite, or update for PostgreSQL
-- `API_HOST` and `API_PORT`: Customize if needed
-- `LOG_LEVEL`: Set to DEBUG for development
+Important variables in `.env`:
 
-### Step 5: Verify Installation
+- `DATABASE_URL`
+- `DATABASE_GENERATE_SCHEMAS`
+- `DEBUG`
+- `CORS_ORIGINS`
+- `LLM_PROVIDER`
+- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
 
-Run the test suite:
-```bash
-pytest
-```
+## 5. Start PostgreSQL
 
-You should see output like:
-```
-============================ test session starts ============================
-collected 2 items
-
-tests/test_main.py::test_health_check PASSED                         [ 50%]
-tests/test_main.py::test_app_creation PASSED                         [100%]
-
-============================ 2 passed in 0.23s ============================
-```
-
-## Running the Development Server
+The repository includes a compose file for local Postgres.
 
 ```bash
-# Option 1: Using uvicorn directly
-uvicorn urban_garbanzo.main:app --reload
+docker compose up -d db
+```
 
-# Option 2: Using Make
+Default database credentials from `.env.example`:
+
+```env
+DATABASE_URL=postgresql://ug_user:ug_pass@localhost:5432/urban_garbanzo
+```
+
+## 6. Create the Schema
+
+Aerich is already configured in `pyproject.toml`. For a fresh database, run:
+
+```bash
+python -m aerich init-db
+```
+
+For later model changes:
+
+```bash
+python -m aerich migrate --name "describe_change"
+python -m aerich upgrade
+```
+
+Make targets are also available:
+
+```bash
+make migrate
+make db-upgrade
+```
+
+## 7. Run the API
+
+```bash
 make run
 ```
 
-Then visit: **http://localhost:8000**
-- API Interactive Docs: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
+Available endpoints:
 
-## Common Development Commands
+- Swagger: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+- Health: `http://localhost:8000/health`
 
-### Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage report
-pytest --cov=urban_garbanzo --cov-report=html
-
-# Run specific test
-pytest tests/test_main.py::test_health_check
-
-# Watch mode (auto-rerun on changes)
-pytest-watch
-```
-
-### Code Quality
+## 8. Run the Tests
 
 ```bash
-# Check code style
-ruff check src tests
-
-# Format code automatically
-black src tests
-
-# Check type hints
-mypy src
-
-# Fix formatting issues automatically
-ruff check --fix src tests
+python -m pytest
 ```
 
-### Using Make
+Notes:
+
+- Tests do not require Postgres
+- Tests use temporary SQLite databases
+- The app itself is configured for Postgres in development
+
+## Common Commands
 
 ```bash
-make help              # Show all available commands
-make test              # Run tests
-make lint              # Check code quality
-make format            # Format code
-make run               # Start dev server
-make clean             # Clean up cache files
-```
-
-## Database Setup (Optional)
-
-### For PostgreSQL Development
-
-Install PostgreSQL:
-
-**macOS:**
-```bash
-brew install postgresql@15
-brew services start postgresql@15
-```
-
-**Linux (Ubuntu):**
-```bash
-sudo apt-get install postgresql postgresql-contrib
-sudo service postgresql start
-```
-
-**Windows:**
-Download and install from https://www.postgresql.org/download/windows/
-
-Create database:
-```bash
-psql
-CREATE DATABASE urban_garbanzo;
-\q
-```
-
-Update `.env`:
-```
-DATABASE_URL=postgresql://postgres:password@localhost:5432/urban_garbanzo
-```
-
-### Using Docker (Easiest for PostgreSQL)
-
-```bash
-# Start PostgreSQL in Docker
-docker run --name urban-garbanzo-db \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=urban_garbanzo \
-  -p 5432:5432 \
-  -d postgres:15
-
-# Update .env
-DATABASE_URL=postgresql://postgres:password@localhost:5432/urban_garbanzo
-```
-
-## Pre-Commit Hooks
-
-Install pre-commit hooks to automatically check code before commits:
-
-```bash
-pip install pre-commit
-pre-commit install
-
-# Run manually
+make run
+make test
+make lint
+make format
+make typecheck
 make precommit
+make migrate
+make db-upgrade
 ```
 
-From now on, `git commit` will run checks automatically.
+Direct equivalents:
+
+```bash
+python -m pytest
+python -m ruff check src tests
+python -m mypy src
+python -m black src tests
+python -m aerich migrate --name "describe_change"
+python -m aerich upgrade
+```
+
+## Implemented API Surface
+
+### Prompts
+
+- `POST /api/v1/prompts`
+- `GET /api/v1/prompts`
+- `GET /api/v1/prompts/{prompt_id}`
+- `POST /api/v1/prompts/{prompt_id}/evaluate`
+- `DELETE /api/v1/prompts/{prompt_id}`
+
+### Evaluations
+
+- `GET /api/v1/evaluations/{evaluation_id}`
+- `GET /api/v1/prompts/{prompt_id}/evaluations`
+
+### Leaderboards
+
+- `GET /api/v1/leaderboard/prompts`
+- `GET /api/v1/leaderboard/users/best`
+- `GET /api/v1/leaderboard/users/average`
+
+## LLM Configuration
+
+Set one of the following modes in `.env`:
+
+Heuristics only:
+
+```env
+LLM_PROVIDER=none
+```
+
+OpenAI:
+
+```env
+LLM_PROVIDER=openai
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Anthropic:
+
+```env
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your_key_here
+ANTHROPIC_MODEL=claude-3-5-haiku-latest
+```
 
 ## Troubleshooting
 
-### "Python not found"
-Ensure Python 3.10+ is installed: `python --version`
-
-### "venv not activated"
-You should see `(venv)` in your terminal. If not:
-- macOS/Linux: `source venv/bin/activate`
-- Windows: `.\venv\Scripts\Activate.ps1`
-
-### "Module not found"
-Ensure venv is activated and dependencies installed:
-```bash
-pip install -r requirements-dev.txt
-```
-
-### "Port 8000 already in use"
-Change port in `.env` or run:
-```bash
-uvicorn urban_garbanzo.main:app --port 8001
-```
-
 ### PostgreSQL connection errors
-- Verify PostgreSQL is running
-- Check `DATABASE_URL` in `.env`
-- Use SQLite by default: `DATABASE_URL=sqlite://:memory:`
+
+- Confirm Docker is running
+- Confirm `docker compose up -d db` succeeded
+- Confirm `DATABASE_URL` matches `.env.example`
+
+### Migration errors
+
+- Ensure the database container is running
+- Ensure `urban_garbanzo.database.TORTOISE_ORM` is importable
+
+### Port 8000 already in use
+
+Change `API_PORT` in `.env` or start uvicorn manually on another port.
+
+### LLM evaluation errors
+
+- Verify `LLM_PROVIDER`
+- Verify the matching API key is set
+- Set `LLM_PROVIDER=none` to fall back to heuristics-only mode
 
 ## Next Steps
 
-1. **Read the documentation**: Check [README.md](../README.md)
-2. **Write some code**: See [src/urban_garbanzo/](../src/urban_garbanzo/)
-3. **Add tests**: See [tests/](../tests/) for examples
-4. **Contribute**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
-
-## Getting Help
-
-- Check existing [GitHub Issues](https://github.com/Shreyas-Ashtamkar/urban-garbanzo/issues)
-- Open a new issue with details about your problem
-- Visit the [GitHub Discussions](https://github.com/Shreyas-Ashtamkar/urban-garbanzo/discussions)
-
-## One-Liner Quick Start
-
-If you have everything set up already:
-
-```bash
-git clone https://github.com/Shreyas-Ashtamkar/urban-garbanzo.git && cd urban-garbanzo && python3 -m venv venv && source venv/bin/activate && pip install -r requirements-dev.txt && cp .env.example .env && make run
-```
-
-(Or use your OS-specific venv activation command)
+1. Start the API and inspect `/docs`
+2. Create prompts and trigger evaluations
+3. Generate follow-up migrations as models evolve
+4. Add auth when anonymous submission is no longer sufficient
