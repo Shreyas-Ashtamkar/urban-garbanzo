@@ -1,5 +1,5 @@
 """Setup configuration for urban-garbanzo."""
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="urban-garbanzo",
