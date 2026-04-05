@@ -1,0 +1,33 @@
+name: Lint & Type Check
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Lint with ruff
+        run: ruff check src tests
+
+      - name: Format check with black
+        run: black --check src tests
+
+      - name: Type check with mypy
+        run: mypy src
