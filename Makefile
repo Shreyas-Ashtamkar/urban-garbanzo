@@ -1,4 +1,4 @@
-.PHONY: help install dev install-dev clean test lint format typecheck precommit run docs
+.PHONY: help install dev install-dev clean test lint format typecheck precommit run docs env migrate db-upgrade
 
 help:
 	@echo "urban-garbanzo development commands:"
@@ -32,18 +32,13 @@ dev: install-dev
 	pip install -e .
 
 env:
-	cp .env.example .env
+	copy .env.example .env
 	@echo "Created .env file - update with your configuration"
 
 clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name .mypy_cache -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name htmlcov -exec rm -rf {} + 2>/dev/null || true
-	find . -name .coverage -delete 2>/dev/null || true
-	find . -name "*.egg-info" -type d -exec rm -rf {} + 2>/dev/null || true
-	rm -rf build dist .eggs .pytest_cache .mypy_cache
+	powershell -NoProfile -Command "Get-ChildItem -Path . -Recurse -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -in @('__pycache__','.pytest_cache','.mypy_cache','.ruff_cache','htmlcov') } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue"
+	powershell -NoProfile -Command "Get-ChildItem -Path . -Recurse -Directory -Force -Filter '*.egg-info' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue"
+	powershell -NoProfile -Command "Remove-Item -Force -Recurse build,dist,.eggs,.coverage -ErrorAction SilentlyContinue"
 
 test:
 	pytest
@@ -67,6 +62,12 @@ precommit:
 
 run:
 	uvicorn urban_garbanzo.main:app --reload --host 0.0.0.0 --port 8000
+
+migrate:
+	aerich migrate
+
+db-upgrade:
+	aerich upgrade
 
 docs:
 	@echo "Documentation generation not yet configured"
