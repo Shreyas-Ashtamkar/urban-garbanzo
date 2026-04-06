@@ -16,6 +16,7 @@ All commands are available via the `/` prefix in OpenCode TUI. For example:
 /review           # Review code quality
 /explain          # Explain how code works
 /debug            # Investigate and fix bugs
+/ship     # Review changes, update workflows, commit separately, and push
 ```
 
 ## Commands Overview
@@ -31,6 +32,7 @@ All commands are available via the `/` prefix in OpenCode TUI. For example:
 | `review` | Review code for best practices | Before merge or during code review |
 | `explain` | Explain how code works | Understanding unfamiliar parts |
 | `debug` | Investigate and fix bugs | Fixing issues or creating bug fixes |
+| `ship` | Review changes, update workflows, commit separately, and push | Preparing a branch for remote with CI updates |
 
 ## Structure
 
