@@ -128,7 +128,7 @@ docker compose up -d db
 The default `.env.example` already points at this container:
 
 ```env
-DATABASE_URL=postgresql://ug_user:ug_pass@localhost:5432/urban_garbanzo
+DATABASE_URL=postgres://ug_user:ug_pass@localhost:5432/urban_garbanzo
 ```
 
 ### 6. Initialize the database schema
