@@ -1,0 +1,43 @@
+# This is a plan I - the author of this project have manually created and no AI or user other than me has the right to edit it.
+
+v1
+- Anonymous public UI at /
+- Input fields:
+  - prompt text
+  - target model as free text
+- Submit prompt for evaluation only
+- No scoring logic yet
+- No prompt optimization generation yet
+- No persistence to server
+- UI should be polished and responsive
+- API routes moved under /api/v1
+v2
+- Add localStorage saving for prompts
+- Add privacy choice:
+  - public
+  - private
+- Persist user preference in the browser
+- Keep anonymous usage
+v3
+- Add server-side saving of prompts
+- Add prompt listing page
+- Add dashboard for saved prompts
+- Add scoring logic
+- Store scores with prompts
+- Support privacy on the server side
+v4
+- Add authentication
+- Allow user accounts
+- Associate saved prompts and scores with authenticated users
+- Add account-level management for private and public prompts
+v5
+- Add leaderboard
+- Rank prompts by score and/or related metrics
+- Add filters and sorting
+- Public leaderboard pages and APIs
+Design notes
+- Keep the UI inside the same FastAPI app
+- Keep API routes versioned under /api/v1
+- Prefer simple server-rendered pages first
+- Reuse existing evaluation services where possible
+- Avoid introducing a second framework
