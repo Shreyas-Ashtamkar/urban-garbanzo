@@ -11,6 +11,8 @@
 
 ## Development Setup
 
+Note: The virtual Python environment is located in `venv/`. The terminal environment is Windows PowerShell, so commands and paths should be used accordingly (e.g., use `.\` for relative paths).
+
 ```bash
 # Clone and setup
 git clone https://github.com/Shreyas-Ashtamkar/urban-garbanzo.git
