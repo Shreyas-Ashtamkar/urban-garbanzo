@@ -59,14 +59,18 @@ def normalize_llm_payload(payload: dict[str, Any]) -> LLMScoreResult:
 class OpenAIProvider:
     """OpenAI-backed scoring provider."""
 
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, base_url: str | None = None) -> None:
         self.api_key = api_key
         self.model = model
+        self.base_url = base_url
 
     def _get_client(self) -> Any:
         from openai import AsyncOpenAI
 
-        return AsyncOpenAI(api_key=self.api_key)
+        kwargs = {"api_key": self.api_key}
+        if self.base_url:
+            kwargs["base_url"] = self.base_url
+        return AsyncOpenAI(**kwargs)
 
     async def score(self, prompt_text: str) -> LLMScoreResult:
         if not self.api_key:
@@ -131,9 +135,13 @@ def create_llm_provider(app_settings: Settings) -> LLMProvider | None:
         return None
 
     if app_settings.llm_provider == "openai":
+        api_key = app_settings.openai_api_key
+        if not api_key and app_settings.openai_base_url:
+            api_key = "ollama"
         return OpenAIProvider(
-            api_key=app_settings.openai_api_key or "",
+            api_key=api_key or "",
             model=app_settings.openai_model,
+            base_url=app_settings.openai_base_url,
         )
 
     if app_settings.llm_provider == "anthropic":

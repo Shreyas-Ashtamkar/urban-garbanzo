@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     anthropic_model: str = "claude-3-5-haiku-latest"
+    openai_base_url: str | None = None
     heuristic_weight: float = 0.3
     llm_weight: float = 0.7
 
