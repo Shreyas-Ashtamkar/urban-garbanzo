@@ -9,7 +9,7 @@ def get_tortoise_config() -> dict[str, object]:
     """Build the Tortoise ORM configuration from current settings."""
 
     return {
-        "connections": {"default": settings.database_url},
+        "connections": {"default": settings.tortoise_database_url},
         "apps": {
             "models": {
                 "models": ["urban_garbanzo.models", "aerich.models"],

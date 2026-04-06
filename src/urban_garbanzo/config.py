@@ -1,6 +1,7 @@
 """Settings and configuration management."""
 
 from typing import Literal
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,6 +30,15 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-3-5-haiku-latest"
     heuristic_weight: float = 0.3
     llm_weight: float = 0.7
+
+    @property
+    def tortoise_database_url(self) -> str:
+        """Normalize database URLs into a scheme Tortoise understands."""
+
+        if self.database_url.startswith("postgresql://"):
+            parts = urlsplit(self.database_url)
+            return urlunsplit(("postgres", parts.netloc, parts.path, parts.query, parts.fragment))
+        return self.database_url
 
 
 settings = Settings()
