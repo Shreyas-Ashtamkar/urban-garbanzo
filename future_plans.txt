@@ -1,0 +1,146 @@
+urban-garbanzo Product Roadmap
+
+Current Direction
+- Keep a single FastAPI application that serves both the public UI and the versioned JSON API.
+- Serve the user-facing web experience from the root path `/`.
+- Keep machine-facing routes under `/api/v1`.
+- Grow the product incrementally without introducing a second framework or premature frontend complexity.
+
+Version 1: Anonymous Evaluation UI
+- Deliver a polished, server-rendered landing page at `/`.
+- Allow anonymous visitors to interact with the product immediately.
+- Provide a large prompt editor for user prompt input.
+- Provide a free-text field for the target model the prompt is meant for.
+- Run the existing evaluation pipeline immediately on submit.
+- Use the evaluator configuration already provided through environment variables.
+- Show the evaluation result directly in the UI after submission.
+- Preserve the versioned JSON API for programmatic clients.
+- Keep the implementation simple, stable, and easy to extend.
+
+Version 1 Scope Details
+- Inputs:
+  - prompt text
+  - target model text
+- Processing:
+  - create a prompt record
+  - run evaluation immediately
+  - store the evaluation output
+- Outputs:
+  - total score and dimension scores if available from the current evaluator
+  - rationale returned by the evaluator
+  - visible confirmation of the submitted target model
+- UX expectations:
+  - responsive layout for desktop and mobile
+  - strong visual hierarchy
+  - clear validation and error feedback
+  - empty state before the first submission
+
+Version 1 Non-Goals
+- No authentication
+- No user accounts
+- No privacy toggle yet
+- No local browser persistence yet
+- No saved prompt dashboard yet
+- No public listing of prompts in the UI yet
+- No leaderboard UI yet
+- No prompt optimization generation logic
+
+Version 2: Local Persistence and Privacy Preferences
+- Add browser-side persistence using localStorage.
+- Let anonymous users keep working without needing an account.
+- Store the prompt draft locally so reloads do not wipe work.
+- Store the target model locally so repeat users do not need to re-enter it.
+- Add privacy controls to the UI.
+- Let users choose whether a prompt is intended to be public or private.
+- Store that privacy preference locally until server-side accounts and persistence arrive.
+
+Version 2 Scope Details
+- Save prompt drafts in localStorage.
+- Save the last used target model in localStorage.
+- Restore local state when the page reloads.
+- Add a privacy setting with at least these options:
+  - public
+  - private
+- Explain clearly that private behavior in v2 is browser-local preference only, not account-backed privacy.
+- Add UX around clearing local data.
+
+Version 2 Risks and Notes
+- localStorage can be cleared by the browser or the user.
+- localStorage should not be presented as durable backup.
+- Privacy messaging must be explicit so users do not confuse browser-local behavior with account-backed security.
+
+Version 3: Server Persistence, Prompt Listing, Dashboard, and Saved Scores
+- Introduce proper server-side saving and retrieval flows.
+- Expand the product from a one-shot evaluator into a persistent workspace.
+- Add prompt listing and dashboard views.
+- Expose saved evaluation history in a user-friendly way.
+- Formalize scores as part of the product experience, not just backend output.
+
+Version 3 Scope Details
+- Save prompts to the server as a first-class product feature.
+- Save evaluation results and associate them with submitted prompts.
+- Add a prompt listing page in the UI.
+- Add a basic dashboard page showing recent prompts and their latest evaluations.
+- Add detail pages for previously submitted prompts.
+- Surface saved scores and evaluation history clearly in the UI.
+- Respect privacy choices server-side once persistence exists.
+- Add backend filtering for public versus private content.
+
+Version 3 Data Expectations
+- Prompt records should include privacy state.
+- Evaluations should remain linked to prompts.
+- The dashboard should support recent activity and future search/filter features.
+
+Version 4: Authentication and Account Ownership
+- Add user authentication.
+- Move from anonymous-only flows to account-backed ownership.
+- Let authenticated users manage their private and public prompts.
+- Provide stable identity for saved work and future ranking features.
+
+Version 4 Scope Details
+- Add signup and login flows.
+- Associate prompts and evaluations with authenticated users.
+- Support account-based access to private prompts.
+- Allow users to manage visibility of their prompts.
+- Add profile-level prompt management.
+- Prepare the backend for richer auditability and ownership rules.
+
+Version 4 Security Expectations
+- Private prompts should only be visible to their owners.
+- Public prompts should be clearly marked and queryable.
+- Access control should be enforced server-side, not just hidden in the UI.
+
+Version 5: Leaderboard and Public Discovery
+- Introduce leaderboard functionality as a product surface.
+- Let users discover strong prompts and top-performing contributors.
+- Make ranking and comparison a core part of the public product experience.
+
+Version 5 Scope Details
+- Add leaderboard pages to the UI.
+- Rank prompts based on the available scoring model.
+- Rank users based on best and average prompt performance where appropriate.
+- Add filtering and sorting controls.
+- Support browsing public prompts from leaderboard entries.
+- Keep private prompts excluded from public rankings.
+
+Version 5 Product Considerations
+- Decide whether leaderboard rank is based on latest score, best score, average score, or a hybrid model.
+- Decide how to handle repeated evaluations of the same prompt.
+- Decide how much prompt content should be publicly visible on leaderboard pages.
+- Decide whether anonymous submissions are eligible once authentication exists.
+
+Cross-Version Design Principles
+- Prefer minimal, well-integrated changes over adding new frameworks.
+- Reuse the existing evaluator and service layer whenever possible.
+- Keep the API versioned and stable for external consumers.
+- Build the UI so it can grow from a single landing page into a larger product without rewrite pressure.
+- Keep validation and error handling consistent across UI and API surfaces.
+- Preserve a clean path for future mobile and SPA-style clients if needed later.
+
+Open Questions For Later Versions
+- Should anonymous submissions remain allowed after authentication is introduced?
+- Should public prompts be opt-in or opt-out by default?
+- Should private prompts ever participate in aggregated analytics?
+- What retention policy should apply to anonymous submissions?
+- How should prompt revisions and version history be represented?
+- Should target model values remain free text forever, or later become guided suggestions with custom override?
