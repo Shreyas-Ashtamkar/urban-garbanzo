@@ -68,10 +68,9 @@ class OpenAIProvider:
     def _get_client(self) -> Any:
         from openai import AsyncOpenAI
 
-        kwargs = {"api_key": self.api_key}
         if self.base_url:
-            kwargs["base_url"] = self.base_url
-        return AsyncOpenAI(**kwargs)
+            return AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+        return AsyncOpenAI(api_key=self.api_key)
 
     async def score(self, prompt_text: str, target_model: str) -> LLMScoreResult:
         if not self.api_key:
