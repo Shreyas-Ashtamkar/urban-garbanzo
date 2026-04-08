@@ -87,7 +87,7 @@ class EvaluatorService:
     def __init__(self, app_settings: Settings) -> None:
         self.settings = app_settings
 
-    async def evaluate(self, prompt_text: str) -> EvaluationResult:
+    async def evaluate(self, prompt_text: str, target_model: str) -> EvaluationResult:
         heuristic_scores = await run_in_threadpool(heuristics.score_prompt, prompt_text)
         provider = create_llm_provider(self.settings)
         llm_scores: dict[str, float] = {}
@@ -95,7 +95,7 @@ class EvaluatorService:
         llm_provider = "none"
 
         if provider is not None:
-            llm_result = await provider.score(prompt_text)
+            llm_result = await provider.score(prompt_text, target_model)
             llm_scores = llm_result.scores
             rationale = llm_result.rationale
             llm_provider = self.settings.llm_provider

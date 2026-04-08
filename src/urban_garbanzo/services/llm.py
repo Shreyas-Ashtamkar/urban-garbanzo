@@ -23,6 +23,7 @@ clarity, correctness, information_density, hallucination_risk, redundancy, ratio
 
 Hallucination risk and redundancy should be higher when the prompt is more risky or repetitive.
 Keep rationale under 80 words.
+Evaluate the prompt in the context of the target model the user intends to use.
 """.strip()
 
 
@@ -37,7 +38,7 @@ class LLMScoreResult:
 class LLMProvider(Protocol):
     """Protocol for pluggable LLM backends."""
 
-    async def score(self, prompt_text: str) -> LLMScoreResult:
+    async def score(self, prompt_text: str, target_model: str) -> LLMScoreResult:
         """Return evaluation scores for a prompt."""
 
 
@@ -72,7 +73,7 @@ class OpenAIProvider:
             kwargs["base_url"] = self.base_url
         return AsyncOpenAI(**kwargs)
 
-    async def score(self, prompt_text: str) -> LLMScoreResult:
+    async def score(self, prompt_text: str, target_model: str) -> LLMScoreResult:
         if not self.api_key:
             raise LLMUnavailable("OPENAI_API_KEY is not configured")
 
@@ -83,7 +84,12 @@ class OpenAIProvider:
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt_text},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Target model: {target_model}\n\nPrompt to evaluate:\n{prompt_text}"
+                    ),
+                },
             ],
         )
         content = response.choices[0].message.content
@@ -105,7 +111,7 @@ class AnthropicProvider:
 
         return AsyncAnthropic(api_key=self.api_key)
 
-    async def score(self, prompt_text: str) -> LLMScoreResult:
+    async def score(self, prompt_text: str, target_model: str) -> LLMScoreResult:
         if not self.api_key:
             raise LLMUnavailable("ANTHROPIC_API_KEY is not configured")
 
@@ -115,7 +121,14 @@ class AnthropicProvider:
             max_tokens=512,
             temperature=0,
             system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt_text}],
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        f"Target model: {target_model}\n\nPrompt to evaluate:\n{prompt_text}"
+                    ),
+                }
+            ],
         )
         content_blocks = getattr(response, "content", [])
         if not content_blocks:

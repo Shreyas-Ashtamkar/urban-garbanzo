@@ -8,7 +8,10 @@ async def test_get_evaluation_by_id(client) -> None:
 
     prompt_response = await client.post(
         "/api/v1/prompts",
-        json={"text": "Summarize the API contract and identify validation edge cases."},
+        json={
+            "text": "Summarize the API contract and identify validation edge cases.",
+            "target_model": "gemini-2.5-flash",
+        },
     )
     prompt_id = prompt_response.json()["id"]
 
@@ -27,7 +30,10 @@ async def test_prompt_evaluation_history_returns_all_runs(client) -> None:
 
     prompt_response = await client.post(
         "/api/v1/prompts",
-        json={"text": "Write instructions that avoid repetition and unsupported claims."},
+        json={
+            "text": "Write instructions that avoid repetition and unsupported claims.",
+            "target_model": "gpt-4.1-mini",
+        },
     )
     prompt_id = prompt_response.json()["id"]
 

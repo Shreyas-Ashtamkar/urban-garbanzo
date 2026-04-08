@@ -19,6 +19,7 @@ class Prompt(Model):
 
     id = fields.UUIDField(pk=True)
     text = fields.TextField()
+    target_model = fields.CharField(max_length=256)
     user: ForeignKeyNullableRelation[User] = fields.ForeignKeyField(
         "models.User",
         related_name="prompts",

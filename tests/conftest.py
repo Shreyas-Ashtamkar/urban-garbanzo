@@ -31,14 +31,15 @@ async def client(monkeypatch: pytest.MonkeyPatch, tmp_path) -> AsyncIterator[Asy
 def mock_openai_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch the OpenAI provider to return deterministic scores."""
 
-    monkeypatch.setenv("LLM_PROVIDER", "openai")
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setattr(settings, "llm_provider", "openai")
+    monkeypatch.setattr(settings, "openai_api_key", "test-key")
 
     from urban_garbanzo.services.llm import OpenAIProvider
 
-    async def fake_score(self: OpenAIProvider, prompt_text: str):
+    async def fake_score(self: OpenAIProvider, prompt_text: str, target_model: str):
         del self
         del prompt_text
+        del target_model
         from urban_garbanzo.services.llm import LLMScoreResult
 
         return LLMScoreResult(

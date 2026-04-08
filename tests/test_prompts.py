@@ -10,6 +10,7 @@ async def test_create_and_get_prompt(client) -> None:
         "/api/v1/prompts",
         json={
             "text": "Write a concise onboarding guide for new contributors.",
+            "target_model": "gpt-4.1",
             "submitter_tag": "alice",
         },
     )
@@ -23,6 +24,7 @@ async def test_create_and_get_prompt(client) -> None:
     fetched = fetch_response.json()
     assert fetched["id"] == created["id"]
     assert fetched["text"] == "Write a concise onboarding guide for new contributors."
+    assert fetched["target_model"] == "gpt-4.1"
 
 
 async def test_list_prompts_returns_pagination(client) -> None:
@@ -31,7 +33,10 @@ async def test_list_prompts_returns_pagination(client) -> None:
     for index in range(3):
         response = await client.post(
             "/api/v1/prompts",
-            json={"text": f"Create a short project summary for sprint item {index}."},
+            json={
+                "text": f"Create a short project summary for sprint item {index}.",
+                "target_model": "gemini-2.5-pro",
+            },
         )
         assert response.status_code == 201
 
@@ -50,7 +55,8 @@ async def test_evaluate_prompt_persists_scores(client) -> None:
     prompt_response = await client.post(
         "/api/v1/prompts",
         json={
-            "text": "Explain the rollout plan with owners, dates, and measurable success criteria."
+            "text": "Explain the rollout plan with owners, dates, and measurable success criteria.",
+            "target_model": "claude-3.7-sonnet",
         },
     )
     prompt_id = prompt_response.json()["id"]
@@ -69,7 +75,10 @@ async def test_delete_prompt_soft_deletes_record(client) -> None:
 
     prompt_response = await client.post(
         "/api/v1/prompts",
-        json={"text": "Draft a customer-facing announcement for next week's release."},
+        json={
+            "text": "Draft a customer-facing announcement for next week's release.",
+            "target_model": "gpt-4o-mini",
+        },
     )
     prompt_id = prompt_response.json()["id"]
 

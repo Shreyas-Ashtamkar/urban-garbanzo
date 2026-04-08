@@ -18,6 +18,7 @@ class PromptCreate(BaseModel):
     """Prompt creation payload."""
 
     text: str = Field(min_length=10, max_length=10_000)
+    target_model: str = Field(min_length=2, max_length=256)
     submitter_tag: str | None = Field(default=None, min_length=2, max_length=64)
 
     @field_validator("text")
@@ -28,6 +29,16 @@ class PromptCreate(BaseModel):
         normalized = value.strip()
         if not normalized:
             raise ValueError("Prompt text cannot be blank")
+        return normalized
+
+    @field_validator("target_model")
+    @classmethod
+    def normalize_target_model(cls, value: str) -> str:
+        """Trim target model input while rejecting blank submissions."""
+
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Target model cannot be blank")
         return normalized
 
     @field_validator("submitter_tag")
@@ -49,6 +60,7 @@ class PromptRead(BaseModel):
 
     id: UUID
     text: str
+    target_model: str
     submitter_tag: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -84,6 +96,7 @@ def build_prompt_read(prompt: Prompt, latest_evaluation: Evaluation | None = Non
     return PromptRead(
         id=prompt.id,
         text=prompt.text,
+        target_model=prompt.target_model,
         submitter_tag=submitter_tag,
         created_at=prompt.created_at,
         updated_at=prompt.updated_at,

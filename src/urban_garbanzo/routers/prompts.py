@@ -38,7 +38,7 @@ async def create_prompt(payload: PromptCreate) -> PromptRead:
     """Store a prompt submission without evaluating it yet."""
 
     user = await resolve_submitter(payload.submitter_tag)
-    prompt = await Prompt.create(text=payload.text, user=user)
+    prompt = await Prompt.create(text=payload.text, target_model=payload.target_model, user=user)
     await prompt.fetch_related("user", "evaluations")
     return build_prompt_read(prompt)
 
@@ -84,7 +84,7 @@ async def evaluate_prompt(
 ) -> EvaluationRead:
     """Run the evaluation pipeline for a prompt and store the result."""
 
-    result = await evaluator.evaluate(prompt.text)
+    result = await evaluator.evaluate(prompt.text, prompt.target_model)
     evaluation = await Evaluation.create(
         prompt=prompt,
         clarity=to_decimal(result.clarity),

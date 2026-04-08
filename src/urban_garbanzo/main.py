@@ -7,12 +7,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .config import settings
 from .database import close_db, init_db
 from .exceptions import register_exception_handlers
 from .routers import evaluations_router, leaderboard_router, prompts_router
+from .ui import router as ui_router
+from .ui.router import BASE_DIR as UI_BASE_DIR
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
 logger = logging.getLogger(__name__)
@@ -51,6 +54,8 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
+    app.mount("/static", StaticFiles(directory=str(UI_BASE_DIR / "static")), name="static")
+    app.include_router(ui_router)
     app.include_router(prompts_router, prefix="/api/v1")
     app.include_router(evaluations_router, prefix="/api/v1")
     app.include_router(leaderboard_router, prefix="/api/v1")

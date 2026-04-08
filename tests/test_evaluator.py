@@ -50,7 +50,8 @@ async def test_evaluator_service_uses_heuristics_when_llm_disabled() -> None:
 
     service = EvaluatorService(Settings(llm_provider="none", database_url="sqlite://:memory:"))
     result = await service.evaluate(
-        "Write a rollout plan with owners, dependencies, mitigations, and success metrics."
+        "Write a rollout plan with owners, dependencies, mitigations, and success metrics.",
+        "gpt-4.1",
     )
     assert result.llm_provider == "none"
     assert result.heuristic_scores
