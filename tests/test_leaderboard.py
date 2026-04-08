@@ -10,7 +10,11 @@ async def seed_scored_prompt(client, text: str, submitter_tag: str | None = None
 
     response = await client.post(
         "/api/v1/prompts",
-        json={"text": text, "submitter_tag": submitter_tag},
+        json={
+            "text": text,
+            "target_model": "gpt-4.1",
+            "submitter_tag": submitter_tag,
+        },
     )
     prompt = cast(dict[str, Any], response.json())
     await client.post(f"/api/v1/prompts/{prompt['id']}/evaluate")
