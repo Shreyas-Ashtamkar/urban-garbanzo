@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}urban-garbanzo | Editor{% endblock %}
+
+{% block content %}
+<div class="editor-shell">
+  <nav class="editor-nav">
+    <a href="/" class="nav-brand">urban-garbanzo</a>
+    <a href="/" class="nav-back">Back to home</a>
+  </nav>
+
+  <main class="editor-main">
+    {% if result %}
+    <section class="score-bar" id="score-bar">
+      <div class="score-meta">
+        <div class="score-meta-item">
+          <span class="meta-label">Target model</span>
+          <strong>{{ result.prompt.target_model }}</strong>
+        </div>
+        <div class="score-meta-item">
+          <span class="meta-label">Provider</span>
+          <strong>{{ result.evaluation.llm_provider }}</strong>
+        </div>
+      </div>
+      <div class="score-grid">
+        <div class="score-card accent">
+          <span>Total score</span>
+          <strong>{{ result.evaluation.scores.total_score }}</strong>
+        </div>
+        <div class="score-card">
+          <span>Clarity</span>
+          <strong>{{ result.evaluation.scores.clarity }}</strong>
+        </div>
+        <div class="score-card">
+          <span>Correctness</span>
+          <strong>{{ result.evaluation.scores.correctness }}</strong>
+        </div>
+        <div class="score-card">
+          <span>Info density</span>
+          <strong>{{ result.evaluation.scores.information_density }}</strong>
+        </div>
+        <div class="score-card danger">
+          <span>Hallucination risk</span>
+          <strong>{{ result.evaluation.scores.hallucination_risk }}</strong>
+        </div>
+        <div class="score-card danger">
+          <span>Redundancy</span>
+          <strong>{{ result.evaluation.scores.redundancy }}</strong>
+        </div>
+      </div>
+      {% if result.evaluation.rationale %}
+      <div class="score-rationale">
+        <span class="meta-label">Rationale</span>
+        <p>{{ result.evaluation.rationale }}</p>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <form method="post" action="/editor" id="editor-form">
+      <div class="editor-toolbar">
+        <label class="editor-model-field">
+          <span class="meta-label">Target model</span>
+          <input
+            type="text"
+            name="target_model"
+            id="target-model"
+            placeholder="e.g. gpt-4.1, gemini-2.5-pro, claude-3.7"
+            value="{{ form_data.target_model }}"
+          >
+        </label>
+        <button type="submit" class="check-button" id="check-button">Check prompt</button>
+      </div>
+      {% if error_message %}
+      <div class="banner error editor-banner">{{ error_message }}</div>
+      {% endif %}
+      <div class="editor-panes">
+        <div class="pane pane-editor">
+          <div class="pane-label">Markdown</div>
+          <div id="codemirror-host"></div>
+          <noscript>
+            <textarea
+              name="text"
+              rows="28"
+              placeholder="Write your prompt here (markdown supported)..."
+              required
+              minlength="10"
+            >{{ form_data.text }}</textarea>
+          </noscript>
+          <input type="hidden" name="text" id="text-hidden" value="{{ form_data.text | e }}">
+        </div>
+        <div class="pane pane-preview">
+          <div class="pane-label">Preview</div>
+          <div class="preview-content" id="preview-content"></div>
+        </div>
+      </div>
+    </form>
+  </main>
+</div>
+
+<!-- CodeMirror 6 and marked.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js" crossorigin="anonymous"></script>
+<script type="module">
+  // Dynamically load CodeMirror 6 bundles (ESM)
+  const CM_BASE = "https://esm.sh/@codemirror";
+  const MARKED  = "https://esm.sh/marked@12";
+
+  async function init() {
+    const [
+      { EditorState },
+      { EditorView, keymap, lineNumbers, highlightActiveLine },
+      { defaultKeymap, historyKeymap, history },
+      { markdown },
+      { oneDark },
+      { marked },
+    ] = await Promise.all([
+      import(`${CM_BASE}/state@6`),
+      import(`${CM_BASE}/view@6`),
+      import(`${CM_BASE}/commands@6`),
+      import(`${CM_BASE}/lang-markdown@6`),
+      import(`${CM_BASE}/theme-one-dark@6`),
+      import(MARKED),
+    ]);
+
+    const host = document.getElementById("codemirror-host");
+    const hiddenInput = document.getElementById("text-hidden");
+    const previewEl = document.getElementById("preview-content");
+
+    const initialText = hiddenInput.value;
+
+    function updatePreview(text) {
+      previewEl.innerHTML = marked.parse(text);
+    }
+
+    const updateListener = EditorView.updateListener.of((update) => {
+      if (update.docChanged) {
+        const text = update.state.doc.toString();
+        hiddenInput.value = text;
+        updatePreview(text);
+      }
+    });
+
+    const state = EditorState.create({
+      doc: initialText,
+      extensions: [
+        history(),
+        keymap.of([...defaultKeymap, ...historyKeymap]),
+        lineNumbers(),
+        highlightActiveLine(),
+        markdown(),
+        oneDark,
+        updateListener,
+        EditorView.lineWrapping,
+      ],
+    });
+
+    const view = new EditorView({ state, parent: host });
+
+    // Initial preview render
+    updatePreview(initialText);
+
+    // Sync hidden input before form submit (covers edge cases)
+    document.getElementById("editor-form").addEventListener("submit", () => {
+      hiddenInput.value = view.state.doc.toString();
+    });
+  }
+
+  init().catch(console.error);
+</script>
+{% endblock %}

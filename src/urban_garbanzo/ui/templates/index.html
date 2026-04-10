@@ -3,129 +3,369 @@
 {% block title %}urban-garbanzo | Prompt evaluation{% endblock %}
 
 {% block content %}
-<main class="shell">
-  <section class="hero-card">
-    <div class="hero-copy">
-      <p class="eyebrow">Prompt evaluation</p>
-      <h1>Pressure-test prompts before they hit a real model.</h1>
-      <p class="lede">
-        Drop in the prompt you want to use, tell us the target model, and get an immediate
-        evaluation from the configured LLM backend.
-      </p>
-      <div class="hero-points">
-        <span>Anonymous access</span>
-        <span>Instant evaluation</span>
-        <span>Same FastAPI app</span>
+<main class="landing-shell">
+  <nav class="landing-nav">
+    <a href="#hero" class="nav-brand">urban-garbanzo</a>
+    <div class="nav-links" aria-label="Primary links">
+      <a href="#workflow">Workflow</a>
+      <a href="#inside">Inside the review</a>
+      <a href="#uses">Who it helps</a>
+      <a href="#cta">Start</a>
+    </div>
+    <a href="/editor" class="nav-inline-cta nav-inline-cta-angled">Try out now</a>
+  </nav>
+
+  <aside class="floating-menu" aria-label="Landing page sections">
+    <a href="#hero" class="floating-menu-item is-active" data-section-link="hero">Hero</a>
+    <a href="#workflow" class="floating-menu-item" data-section-link="workflow">Workflow</a>
+    <a href="#inside" class="floating-menu-item" data-section-link="inside">Review</a>
+    <a href="#uses" class="floating-menu-item" data-section-link="uses">Uses</a>
+    <a href="#cta" class="floating-menu-item" data-section-link="cta">Start</a>
+  </aside>
+
+  <a href="/editor" class="floating-cta">Try out now</a>
+
+  <section class="landing-section landing-hero" id="hero" data-section="hero">
+    <div class="landing-hero-inner landing-hero-editorial">
+      <div class="landing-hero-copy hero-copy-editorial">
+        <p class="eyebrow eyebrow-cut">Prompt evaluation</p>
+        <h1>Know where a prompt will fail before the model tells you the expensive way.</h1>
+        <p class="lede lede-large">
+          urban-garbanzo helps teams review prompts as working instructions, not just text blobs.
+          You can inspect whether the ask is clear, bounded, specific, dense enough to be useful,
+          and safe enough to avoid inviting low-trust output.
+        </p>
+        <p class="hero-paragraph">
+          Instead of bouncing between vague rewrites and repeated model runs, the editor gives you a
+          tighter loop: draft, score, understand the rationale, and improve the prompt with a more
+          obvious next step.
+        </p>
+        <div class="hero-points hero-points-varied">
+          <span class="tag-pill">Instant evaluation</span>
+          <span class="tag-cut">Readable rationale</span>
+          <span class="tag-soft">Markdown workflow</span>
+          <span class="tag-outline">Target-model aware</span>
+        </div>
+        <div class="hero-actions hero-actions-varied">
+          <a href="/editor" class="cta-button cta-button-solid">Open Editor</a>
+          <a href="#workflow" class="ghost-button ghost-button-slice">See the review flow</a>
+        </div>
+      </div>
+
+      <div class="hero-showcase hero-showcase-editorial" aria-label="Sample prompt evaluations">
+        <div class="hero-scoreboard hero-scoreboard-tall">
+          <div class="scoreboard-header">
+            <span class="scoreboard-chip scoreboard-chip-angled">Prompt quality snapshot</span>
+            <span class="scoreboard-meta">Rotating examples</span>
+          </div>
+          <div class="prompt-rotator" data-rotator>
+            <article class="prompt-sample is-visible" data-rotator-item>
+              <div class="sample-topline">
+                <span>Support escalation reply</span>
+                <strong>84 / 100</strong>
+              </div>
+              <p class="sample-prompt">
+                "Write a customer support reply for a delayed enterprise contract renewal. Keep it
+                empathetic, state the blocker, and give a concrete next update time."
+              </p>
+              <div class="sample-metrics sample-metrics-editorial">
+                <span>Clarity 91</span>
+                <span>Correctness 82</span>
+                <span>Density 79</span>
+                <span>Risk 18</span>
+              </div>
+              <p class="sample-rationale sample-rationale-long">
+                This prompt already does two important things right: it names the context and it asks
+                for a practical response shape. The score stays below the top band because the model
+                still has to guess escalation boundaries, message length, and how much commercial
+                detail should be disclosed.
+              </p>
+            </article>
+
+            <article class="prompt-sample" data-rotator-item>
+              <div class="sample-topline">
+                <span>Fintech launch checklist</span>
+                <strong>92 / 100</strong>
+              </div>
+              <p class="sample-prompt">
+                "Generate a launch checklist for a new fintech onboarding flow. Group tasks by legal,
+                analytics, design QA, and rollback readiness."
+              </p>
+              <div class="sample-metrics sample-metrics-editorial">
+                <span>Clarity 94</span>
+                <span>Correctness 90</span>
+                <span>Density 93</span>
+                <span>Risk 10</span>
+              </div>
+              <p class="sample-rationale sample-rationale-long">
+                The categories give the model a strong organizing frame, which sharply reduces drift.
+                What would make it even better is asking for owners, exit criteria, and explicit launch
+                blockers so the output becomes directly operational.
+              </p>
+            </article>
+
+            <article class="prompt-sample" data-rotator-item>
+              <div class="sample-topline">
+                <span>Roadmap summary rewrite</span>
+                <strong>73 / 100</strong>
+              </div>
+              <p class="sample-prompt">
+                "Summarize this roadmap and make it better."
+              </p>
+              <div class="sample-metrics sample-metrics-editorial">
+                <span>Clarity 58</span>
+                <span>Correctness 81</span>
+                <span>Density 54</span>
+                <span>Risk 27</span>
+              </div>
+              <p class="sample-rationale sample-rationale-long">
+                The request signals intent but not standards. The model has to invent what “better”
+                means, for whom the summary is written, how much to preserve, and what structure the
+                final answer should follow.
+              </p>
+            </article>
+          </div>
+        </div>
+
+        <div class="hero-story-panel">
+          <div class="story-panel-block story-panel-primary">
+            <p class="screen-label screen-label-wide">What the tool is actually helping with</p>
+            <p>
+              Strong prompts are usually strong because they remove costly ambiguity. They describe
+              who the output is for, what shape it should take, what must stay true, and what failure
+              modes the model should avoid.
+            </p>
+            <p>
+              This landing page intentionally shows richer examples because the product itself is about
+              reading instructions carefully and improving them with precision.
+            </p>
+          </div>
+          <div class="story-panel-ribbon">
+            <span class="ribbon-chip">Clarity</span>
+            <span class="ribbon-chip ribbon-chip-round">Bounds</span>
+            <span class="ribbon-chip ribbon-chip-soft">Output shape</span>
+          </div>
+          <div class="story-panel-block story-panel-secondary">
+            <p class="screen-label screen-label-wide">Visual preview</p>
+            <div class="screen-body screen-body-tall">
+              <div class="screen-column screen-column-angled">
+                <p class="screen-label">Editor</p>
+                <div class="screen-text-block long"></div>
+                <div class="screen-text-block long"></div>
+                <div class="screen-text-block"></div>
+                <div class="screen-text-block short"></div>
+                <div class="screen-text-block long"></div>
+              </div>
+              <div class="screen-column highlight screen-column-rounded">
+                <p class="screen-label">Review</p>
+                <div class="screen-score-row"><span>Score</span><strong>8.9</strong></div>
+                <div class="screen-score-row"><span>Risk note</span><strong>low</strong></div>
+                <div class="screen-score-row"><span>Next fix</span><strong>format</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <form method="post" class="editor-card">
-      <label class="field">
-        <span>Prompt</span>
-        <textarea
-          name="text"
-          rows="10"
-          placeholder="Describe the task, constraints, desired output format, and anything the model must avoid."
-          required
-          minlength="10"
-        >{{ form_data.text }}</textarea>
-      </label>
-
-      <label class="field">
-        <span>Target model</span>
-        <input
-          type="text"
-          name="target_model"
-          placeholder="Gemini 2.5 Pro, GPT-4.1, Claude 3.7 Sonnet, local mistral, ..."
-          value="{{ form_data.target_model }}"
-          required
-          minlength="2"
-        >
-      </label>
-
-      {% if error_message %}
-      <div class="banner error">{{ error_message }}</div>
-      {% endif %}
-
-      <button type="submit" class="submit-button">Evaluate prompt</button>
-    </form>
   </section>
 
-  <section class="results-grid">
-    <article class="panel result-panel">
-      <div class="panel-header">
-        <p class="eyebrow">Latest result</p>
-        <h2>Evaluation output</h2>
+  <section class="landing-section content-section workflow-section" id="workflow" data-section="workflow">
+    <div class="section-heading split-heading workflow-heading">
+      <div>
+        <p class="eyebrow eyebrow-rounded">Workflow</p>
+        <h2>A clearer prompt-review loop, shown as a sequence instead of a pile of features.</h2>
       </div>
+      <p class="section-aside">
+        The point is not to collect scores for their own sake. The point is to move from rough prompt
+        to reliable prompt with an obvious path between each step.
+      </p>
+    </div>
+    <div class="workflow-strip" aria-label="Workflow steps">
+      <article class="workflow-step workflow-step-cut">
+        <span class="workflow-number">01</span>
+        <h3>Draft the instruction with intent</h3>
+        <p>
+          Start with the real task, target audience, expected output shape, and any hard constraints.
+          This makes the first evaluation meaningful instead of cosmetic.
+        </p>
+      </article>
+      <div class="workflow-arrow" aria-hidden="true">
+        <span></span>
+      </div>
+      <article class="workflow-step workflow-step-round">
+        <span class="workflow-number">02</span>
+        <h3>Inspect how the prompt is likely to behave</h3>
+        <p>
+          Read the scoring dimensions as a map of weaknesses. Low clarity, low density, and elevated
+          risk usually point to a specific revision problem, not a generic “bad prompt.”
+        </p>
+      </article>
+      <div class="workflow-arrow" aria-hidden="true">
+        <span></span>
+      </div>
+      <article class="workflow-step workflow-step-slice">
+        <span class="workflow-number">03</span>
+        <h3>Use the rationale to tighten the next version</h3>
+        <p>
+          Add boundaries, force output structure, reduce repetition, and make success criteria more
+          explicit until the prompt stops leaving critical decisions to model guesswork.
+        </p>
+      </article>
+    </div>
+  </section>
 
-      {% if result %}
-      <div class="meta-row">
-        <div>
-          <span class="meta-label">Target model</span>
-          <strong>{{ result.prompt.target_model }}</strong>
-        </div>
-        <div>
-          <span class="meta-label">Provider</span>
-          <strong>{{ result.evaluation.llm_provider }}</strong>
-        </div>
+  <section class="landing-section content-section inside-section" id="inside" data-section="inside">
+    <div class="section-heading split-heading inside-heading">
+      <div>
+        <p class="eyebrow eyebrow-cut">Inside the review</p>
+        <h2>Fewer panels, but each one carries more of the actual story.</h2>
       </div>
+      <p class="section-aside">
+        Rather than spreading everything across many tiny cards, this section goes deeper on what the
+        system is looking for and what that means for someone improving a real prompt.
+      </p>
+    </div>
+    <div class="inside-layout">
+      <article class="inside-feature inside-feature-wide">
+        <div class="inside-feature-head">
+          <span class="inside-kicker">How prompts earn stronger scores</span>
+          <strong>Specificity over suggestion</strong>
+        </div>
+        <p>
+          Prompts usually score better when they stop implying the desired outcome and start naming
+          it. That means identifying the audience, the format, the priority order, the constraints,
+          and the conditions under which the model should avoid inventing details.
+        </p>
+        <p>
+          In practice, this helps with everything from launch checklists to incident reviews to
+          customer communication prompts. The product is useful when a team already knows the task but
+          wants the instruction to behave more reliably across repeated use.
+        </p>
+      </article>
+      <article class="inside-feature inside-feature-tall">
+        <div class="inside-feature-head">
+          <span class="inside-kicker">Why rationale matters</span>
+          <strong>Actionable critique beats a naked score</strong>
+        </div>
+        <p>
+          A score without explanation rarely tells you what to change. A rationale gives you a more
+          exact next move: add decision criteria, bound the length, keep facts fixed, specify the end
+          format, or reduce duplicate phrasing that muddies the instruction.
+        </p>
+      </article>
+      <article class="inside-feature inside-feature-accent">
+        <div class="inside-feature-head">
+          <span class="inside-kicker">What the dimensions reveal</span>
+          <strong>Each metric points to a different failure mode</strong>
+        </div>
+        <ul class="inside-list">
+          <li><strong>Clarity:</strong> the task is too implied, not sufficiently stated.</li>
+          <li><strong>Correctness:</strong> the prompt may lead the model into invalid or unstable output.</li>
+          <li><strong>Density:</strong> either too thin to act on or too padded to parse efficiently.</li>
+          <li><strong>Risk:</strong> the instruction invites invention where evidence or grounding is thin.</li>
+          <li><strong>Redundancy:</strong> repeated phrasing lowers signal-to-noise and blurs priorities.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
 
-      <div class="score-grid">
-        <div class="score-card accent">
-          <span>Total score</span>
-          <strong>{{ result.evaluation.scores.total_score }}</strong>
-        </div>
-        <div class="score-card">
-          <span>Clarity</span>
-          <strong>{{ result.evaluation.scores.clarity }}</strong>
-        </div>
-        <div class="score-card">
-          <span>Correctness</span>
-          <strong>{{ result.evaluation.scores.correctness }}</strong>
-        </div>
-        <div class="score-card">
-          <span>Info density</span>
-          <strong>{{ result.evaluation.scores.information_density }}</strong>
-        </div>
-        <div class="score-card danger">
-          <span>Hallucination risk</span>
-          <strong>{{ result.evaluation.scores.hallucination_risk }}</strong>
-        </div>
-        <div class="score-card danger">
-          <span>Redundancy</span>
-          <strong>{{ result.evaluation.scores.redundancy }}</strong>
-        </div>
+  <section class="landing-section content-section uses-section" id="uses" data-section="uses">
+    <div class="section-heading split-heading uses-heading">
+      <div>
+        <p class="eyebrow eyebrow-rounded">Who it helps</p>
+        <h2>Built for teams that need better prompts, not more prompt theater.</h2>
       </div>
+      <p class="section-aside">
+        This is most useful where prompts are part of production work: writing, analysis, support,
+        planning, QA, operations, and internal AI tooling.
+      </p>
+    </div>
+    <div class="uses-layout">
+      <article class="use-story use-story-main">
+        <h3>Product, ops, and AI platform teams</h3>
+        <p>
+          Teams often know that a prompt feels weak but cannot quickly explain why. That slows review,
+          makes handoffs fuzzy, and encourages repeated direct testing instead of focused revision.
+        </p>
+        <p>
+          urban-garbanzo gives those teams a common critique frame. It becomes easier to say “this is
+          missing output structure” or “this still invites unsupported assumptions” than to rely on
+          subjective taste.
+        </p>
+      </article>
+      <article class="use-story use-story-side">
+        <h3>Examples of where it fits</h3>
+        <p>Prompt QA before shipping an internal workflow.</p>
+        <p>Reviewing support and escalation prompts for ambiguity.</p>
+        <p>Tightening planning and summarization prompts used repeatedly by teams.</p>
+        <p>Creating a shared prompt-review language for internal AI enablement.</p>
+      </article>
+      <article class="use-quote">
+        <p>
+          "The score helps us prioritize, but the rationale is what actually reduces rewrite time. It
+          turns vague discomfort into a concrete edit list."
+        </p>
+        <span>Internal prompt review workflow</span>
+      </article>
+    </div>
+  </section>
 
-      <div class="detail-block">
-        <span class="meta-label">Rationale</span>
-        <p>{{ result.evaluation.rationale or "No rationale returned by the configured evaluator." }}</p>
+  <section class="landing-section content-section landing-final" id="cta" data-section="cta">
+    <div class="final-card final-card-editorial">
+      <p class="eyebrow eyebrow-cut">Start now</p>
+      <h2>Open the editor and review your next prompt with a sharper lens.</h2>
+      <p class="lede">
+        Paste the instruction, choose the target model, and start improving from actual critique
+        rather than trial-and-error alone.
+      </p>
+      <div class="hero-actions final-actions hero-actions-varied">
+        <a href="/editor" class="cta-button cta-button-solid">Try out now</a>
+        <a href="#hero" class="ghost-button ghost-button-slice">Back to top</a>
       </div>
-
-      <div class="detail-block">
-        <span class="meta-label">Submitted prompt</span>
-        <pre>{{ result.prompt.text }}</pre>
-      </div>
-      {% else %}
-      <div class="empty-state">
-        <h3>No evaluation yet</h3>
-        <p>Submit a prompt to see the current evaluator output here.</p>
-      </div>
-      {% endif %}
-    </article>
-
-    <article class="panel notes-panel">
-      <div class="panel-header">
-        <p class="eyebrow">How it works</p>
-        <h2>Current v1 behavior</h2>
-      </div>
-      <ul class="notes-list">
-        <li>Anonymous users can submit prompts immediately.</li>
-        <li>The evaluator runs on submit using the configured environment provider.</li>
-        <li>The target model field influences the evaluation context sent to the LLM.</li>
-        <li>API routes stay available under <code>/api/v1</code>.</li>
-      </ul>
-    </article>
+    </div>
   </section>
 </main>
+
+<script>
+  (() => {
+    const sections = Array.from(document.querySelectorAll('[data-section]'));
+    const links = Array.from(document.querySelectorAll('[data-section-link]'));
+    const rotatorItems = Array.from(document.querySelectorAll('[data-rotator-item]'));
+
+    if (sections.length && links.length && 'IntersectionObserver' in window) {
+      const setActiveLink = (sectionId) => {
+        links.forEach((link) => {
+          link.classList.toggle('is-active', link.dataset.sectionLink === sectionId);
+        });
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visibleEntries = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+          if (visibleEntries.length) {
+            setActiveLink(visibleEntries[0].target.dataset.section);
+          }
+        },
+        {
+          rootMargin: '-18% 0px -42% 0px',
+          threshold: [0.2, 0.35, 0.5, 0.7],
+        }
+      );
+
+      sections.forEach((section) => observer.observe(section));
+    }
+
+    if (rotatorItems.length > 1) {
+      let activeIndex = 0;
+      window.setInterval(() => {
+        rotatorItems[activeIndex].classList.remove('is-visible');
+        activeIndex = (activeIndex + 1) % rotatorItems.length;
+        rotatorItems[activeIndex].classList.add('is-visible');
+      }, 3200);
+    }
+  })();
+</script>
 {% endblock %}

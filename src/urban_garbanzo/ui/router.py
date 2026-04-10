@@ -22,7 +22,24 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 router = APIRouter(include_in_schema=False)
 
 
-def render_index(
+# ---------------------------------------------------------------------------
+# Landing page
+# ---------------------------------------------------------------------------
+
+
+@router.get("/", response_class=HTMLResponse)
+async def index(request: Request) -> HTMLResponse:
+    """Render the minimal landing page."""
+
+    return templates.TemplateResponse(request, "index.html", {"request": request})
+
+
+# ---------------------------------------------------------------------------
+# Editor page helpers
+# ---------------------------------------------------------------------------
+
+
+def render_editor(
     request: Request,
     *,
     form_data: dict[str, str] | None = None,
@@ -30,7 +47,7 @@ def render_index(
     error_message: str | None = None,
     status_code: int = status.HTTP_200_OK,
 ) -> HTMLResponse:
-    """Render the landing page with optional form state and results."""
+    """Render the editor page with optional form state and results."""
 
     context = {
         "request": request,
@@ -38,42 +55,47 @@ def render_index(
         "result": result,
         "error_message": error_message,
     }
-    return templates.TemplateResponse(request, "index.html", context, status_code=status_code)
+    return templates.TemplateResponse(request, "editor.html", context, status_code=status_code)
 
 
-@router.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> HTMLResponse:
-    """Render the anonymous evaluation UI."""
-
-    return render_index(request)
+# ---------------------------------------------------------------------------
+# Editor routes
+# ---------------------------------------------------------------------------
 
 
-@router.post("/", response_class=HTMLResponse)
-async def submit_prompt(
+@router.get("/editor", response_class=HTMLResponse)
+async def editor(request: Request) -> HTMLResponse:
+    """Render the markdown editor page."""
+
+    return render_editor(request)
+
+
+@router.post("/editor", response_class=HTMLResponse)
+async def editor_check(
     request: Request,
-    text: Annotated[str, Form(...)],
-    target_model: Annotated[str, Form(...)],
+    text: Annotated[str, Form()],
     evaluator: Annotated[EvaluatorService, Depends(get_evaluator)],
+    target_model: str = Form(default=""),
 ) -> HTMLResponse:
-    """Create and evaluate a prompt submission from the root UI."""
+    """Evaluate a prompt submitted from the editor and re-render with scores."""
 
     normalized_text = text.strip()
-    normalized_target_model = target_model.strip()
+    normalized_target_model = target_model.strip() or "generic"
     form_data = {"text": normalized_text, "target_model": normalized_target_model}
 
     if len(normalized_text) < 10:
-        return render_index(
+        return render_editor(
             request,
             form_data=form_data,
             error_message="Prompt text must be at least 10 characters long.",
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
-    if len(normalized_target_model) < 2:
-        return render_index(
+    if len(normalized_text) > 32000:
+        return render_editor(
             request,
             form_data=form_data,
-            error_message="Target model must be at least 2 characters long.",
+            error_message="Prompt text must be 32,000 characters or fewer.",
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
@@ -94,7 +116,7 @@ async def submit_prompt(
             llm_provider=result.llm_provider,
         )
     except AppError as exc:
-        return render_index(
+        return render_editor(
             request,
             form_data=form_data,
             error_message=exc.detail,
@@ -105,4 +127,4 @@ async def submit_prompt(
         "prompt": prompt,
         "evaluation": build_evaluation_read(evaluation),
     }
-    return render_index(request, form_data=form_data, result=result_payload)
+    return render_editor(request, form_data=form_data, result=result_payload)
