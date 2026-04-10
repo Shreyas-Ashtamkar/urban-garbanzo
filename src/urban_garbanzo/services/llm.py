@@ -8,7 +8,7 @@ from typing import Any, Protocol
 
 from urban_garbanzo.config import Settings
 from urban_garbanzo.exceptions import EvaluationFailed, LLMUnavailable
-from urban_garbanzo.services.heuristics import SCORE_FIELDS, clamp_score
+from urban_garbanzo.services.heuristics import SCORE_FIELDS
 
 SYSTEM_PROMPT = """
 You are an expert prompt evaluator. Score the provided prompt across these dimensions from 1.00 to 100.00:
@@ -46,9 +46,18 @@ def normalize_llm_payload(payload: dict[str, Any]) -> LLMScoreResult:
     """Normalize a provider JSON payload into a shared result object."""
 
     try:
-        scores = {field: clamp_score(float(payload[field])) for field in SCORE_FIELDS}
+        scores = {field: float(payload[field]) for field in SCORE_FIELDS}
     except (KeyError, TypeError, ValueError) as exc:  # pragma: no cover - defensive parsing guard
         raise EvaluationFailed("LLM returned an invalid score payload") from exc
+
+    invalid_fields = [field for field, value in scores.items() if value < 1.0 or value > 100.0]
+    if invalid_fields:
+        invalid_field_list = ", ".join(invalid_fields)
+        raise EvaluationFailed(
+            f"LLM returned out-of-range scores for: {invalid_field_list}. Expected values between 1 and 100."
+        )
+
+    scores = {field: round(value, 2) for field, value in scores.items()}
 
     rationale = payload.get("rationale")
     if rationale is not None:

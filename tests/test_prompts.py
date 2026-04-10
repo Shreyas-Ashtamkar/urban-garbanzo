@@ -67,7 +67,30 @@ async def test_evaluate_prompt_persists_scores(client) -> None:
     assert payload["prompt_id"] == prompt_id
     assert payload["scores"]["total_score"] >= 1.0
     assert payload["llm_provider"] == "none"
-    assert payload["heuristic_scores"]
+    assert payload["heuristic_scores"]["hallucination_risk"] >= 1.0
+    assert payload["heuristic_scores"]["hallucination_risk"] <= 100.0
+    assert payload["llm_scores"] is None
+
+
+async def test_evaluate_prompt_returns_llm_hallucination_risk(client, mock_openai_scores) -> None:
+    """LLM-backed evaluations should return hallucination risk in llm_scores."""
+
+    prompt_response = await client.post(
+        "/api/v1/prompts",
+        json={
+            "text": "Summarize the migration plan with risks, owners, rollout phases, and validation steps.",
+            "target_model": "gpt-4.1",
+        },
+    )
+    prompt_id = prompt_response.json()["id"]
+
+    evaluation_response = await client.post(f"/api/v1/prompts/{prompt_id}/evaluate")
+    assert evaluation_response.status_code == 200
+    payload = evaluation_response.json()
+
+    assert payload["llm_provider"] == "openai"
+    assert payload["llm_scores"]["hallucination_risk"] == 8.0
+    assert payload["llm_scores"]["clarity"] == 92.0
 
 
 async def test_delete_prompt_soft_deletes_record(client) -> None:

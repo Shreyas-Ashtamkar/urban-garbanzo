@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
 from urban_garbanzo.config import Settings
+from urban_garbanzo.exceptions import EvaluationFailed
 from urban_garbanzo.services.llm import OpenAIProvider, create_llm_provider, normalize_llm_payload
 
 
@@ -19,19 +21,48 @@ def test_create_llm_provider_returns_openai_provider() -> None:
     assert isinstance(provider, OpenAIProvider)
 
 
-def test_normalize_llm_payload_clamps_scores() -> None:
-    """LLM payload normalization clamps scores into the supported range."""
+def test_normalize_llm_payload_accepts_in_range_scores() -> None:
+    """LLM payload normalization keeps valid scores on the supported range."""
 
     result = normalize_llm_payload(
         {
-            "clarity": 101,
+            "clarity": 99.2,
             "correctness": 88,
             "information_density": 77,
-            "hallucination_risk": 0,
+            "hallucination_risk": 8,
             "redundancy": 12,
             "rationale": "Looks good",
         }
     )
-    assert result.scores["clarity"] == 100.0
-    assert result.scores["hallucination_risk"] == 1.0
+    assert result.scores["clarity"] == 99.2
+    assert result.scores["hallucination_risk"] == 8.0
     assert result.rationale == "Looks good"
+
+
+def test_normalize_llm_payload_rejects_out_of_range_scores() -> None:
+    """LLM payload normalization rejects scores outside the supported range."""
+
+    with pytest.raises(EvaluationFailed, match="hallucination_risk"):
+        normalize_llm_payload(
+            {
+                "clarity": 91,
+                "correctness": 88,
+                "information_density": 77,
+                "hallucination_risk": 0,
+                "redundancy": 12,
+            }
+        )
+
+
+def test_normalize_llm_payload_requires_hallucination_risk() -> None:
+    """LLM payloads must include hallucination risk with the other score fields."""
+
+    with pytest.raises(EvaluationFailed):
+        normalize_llm_payload(
+            {
+                "clarity": 91,
+                "correctness": 88,
+                "information_density": 77,
+                "redundancy": 12,
+            }
+        )

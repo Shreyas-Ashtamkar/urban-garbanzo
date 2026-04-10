@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -30,6 +30,16 @@ class EvaluationScores(BaseModel):
     total_score: float = Field(ge=1.0, le=100.0)
 
 
+class ModelEvaluationScores(BaseModel):
+    """Raw per-dimension scores returned by the evaluator model layer."""
+
+    clarity: float = Field(ge=1.0, le=100.0)
+    correctness: float = Field(ge=1.0, le=100.0)
+    information_density: float = Field(ge=1.0, le=100.0)
+    hallucination_risk: float = Field(ge=1.0, le=100.0)
+    redundancy: float = Field(ge=1.0, le=100.0)
+
+
 class EvaluationRead(BaseModel):
     """Serialized evaluation record."""
 
@@ -38,8 +48,8 @@ class EvaluationRead(BaseModel):
     id: UUID
     prompt_id: UUID
     scores: EvaluationScores
-    heuristic_scores: dict[str, Any]
-    llm_scores: dict[str, Any]
+    heuristic_scores: ModelEvaluationScores
+    llm_scores: ModelEvaluationScores | None = None
     rationale: str | None = None
     llm_provider: str
     evaluated_at: datetime
@@ -69,8 +79,10 @@ def build_evaluation_read(evaluation: Evaluation) -> EvaluationRead:
             redundancy=score_to_float(evaluation.redundancy),
             total_score=score_to_float(evaluation.total_score),
         ),
-        heuristic_scores=dict(evaluation.heuristic_scores or {}),
-        llm_scores=dict(evaluation.llm_scores or {}),
+        heuristic_scores=ModelEvaluationScores(**dict(evaluation.heuristic_scores or {})),
+        llm_scores=(
+            ModelEvaluationScores(**dict(evaluation.llm_scores)) if evaluation.llm_scores else None
+        ),
         rationale=evaluation.rationale,
         llm_provider=evaluation.llm_provider,
         evaluated_at=evaluation.evaluated_at,
