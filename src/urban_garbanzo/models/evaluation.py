@@ -16,7 +16,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class Evaluation(Model):
     """Stored evaluation scores for a prompt."""
 
-    id = fields.UUIDField(pk=True)
+    id = fields.UUIDField(primary_key=True)
     prompt: ForeignKeyRelation[Prompt] = fields.ForeignKeyField(
         "models.Prompt",
         related_name="evaluations",

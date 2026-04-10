@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class Prompt(Model):
     """Submitted prompt text awaiting evaluation."""
 
-    id = fields.UUIDField(pk=True)
+    id = fields.UUIDField(primary_key=True)
     text = fields.TextField()
     target_model = fields.CharField(max_length=256)
     user: ForeignKeyNullableRelation[User] = fields.ForeignKeyField(

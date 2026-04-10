@@ -16,7 +16,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class User(Model):
     """Anonymous handle used to group prompt submissions."""
 
-    id = fields.UUIDField(pk=True)
+    id = fields.UUIDField(primary_key=True)
     tag = fields.CharField(max_length=64, unique=True)
     created_at = fields.DatetimeField(auto_now_add=True)
 

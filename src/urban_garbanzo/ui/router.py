@@ -66,7 +66,7 @@ async def submit_prompt(
             request,
             form_data=form_data,
             error_message="Prompt text must be at least 10 characters long.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     if len(normalized_target_model) < 2:
@@ -74,7 +74,7 @@ async def submit_prompt(
             request,
             form_data=form_data,
             error_message="Target model must be at least 2 characters long.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     try:
