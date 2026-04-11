@@ -1,5 +1,9 @@
 .PHONY: help install dev install-dev clean test lint format typecheck precommit run docs env migrate db-upgrade
 
+VENV_PYTHON := $(strip $(shell powershell -NoProfile -Command "$${venv} = Get-ChildItem -Path . -Directory -Force -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $$_.FullName 'pyvenv.cfg') } | Select-Object -First 1 -ExpandProperty FullName; if ($${venv}) { Join-Path $${venv} 'Scripts\\python.exe' }"))
+PYTHON ?= $(if $(VENV_PYTHON),$(VENV_PYTHON),python)
+PIP := "$(PYTHON)" -m pip
+
 help:
 	@echo "urban-garbanzo development commands:"
 	@echo ""
@@ -23,13 +27,13 @@ help:
 	@echo "  make docs             Build documentation"
 
 install:
-	pip install -r requirements.txt
+	$(PIP) install -r requirements.txt
 
 install-dev:
-	pip install -r requirements-dev.txt
+	$(PIP) install -r requirements-dev.txt
 
 dev: install-dev
-	pip install -e .
+	$(PIP) install -e .
 
 env:
 	copy .env.example .env
@@ -41,33 +45,33 @@ clean:
 	powershell -NoProfile -Command "Remove-Item -Force -Recurse build,dist,.eggs,.coverage -ErrorAction SilentlyContinue"
 
 test:
-	pytest
+	"$(PYTHON)" -m pytest
 
 test-watch:
-	pytest-watch
+	"$(PYTHON)" -m pytest_watch
 
 lint:
-	ruff check src tests
-	mypy src
+	"$(PYTHON)" -m ruff check src tests
+	"$(PYTHON)" -m mypy src
 
 format:
-	black src tests
-	ruff check --fix src tests
+	"$(PYTHON)" -m black src tests
+	"$(PYTHON)" -m ruff check --fix src tests
 
 typecheck:
-	mypy src
+	"$(PYTHON)" -m mypy src
 
 precommit:
-	pre-commit run --all-files
+	"$(PYTHON)" -m pre_commit run --all-files
 
 run:
-	uvicorn urban_garbanzo.main:app --reload --host 0.0.0.0 --port 8000
+	"$(PYTHON)" -m uvicorn urban_garbanzo.main:app --reload --host 0.0.0.0 --port 8000
 
 migrate:
-	aerich migrate
+	"$(PYTHON)" -m aerich migrate
 
 db-upgrade:
-	aerich upgrade
+	"$(PYTHON)" -m aerich upgrade
 
 docs:
 	@echo "Documentation generation not yet configured"
