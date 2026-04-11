@@ -189,6 +189,14 @@
   // Async evaluation
   // -----------------------------------------------------------------------
 
+  function extractErrorDetail(detail) {
+    if (!detail) return null;
+    if (Array.isArray(detail)) {
+      return detail.map((e) => e.msg || JSON.stringify(e)).join("; ");
+    }
+    return String(detail);
+  }
+
   async function evaluatePrompt(text, targetModel) {
     // Step 1: create the prompt
     const createResp = await fetch("/api/v1/prompts", {
@@ -198,7 +206,7 @@
     });
     if (!createResp.ok) {
       const err = await createResp.json().catch(() => ({}));
-      throw new Error(err.detail || `Failed to create prompt (${createResp.status})`);
+      throw new Error(extractErrorDetail(err.detail) || `Failed to create prompt (${createResp.status})`);
     }
     const prompt = await createResp.json();
 
@@ -208,7 +216,7 @@
     });
     if (!evalResp.ok) {
       const err = await evalResp.json().catch(() => ({}));
-      throw new Error(err.detail || `Evaluation failed (${evalResp.status})`);
+      throw new Error(extractErrorDetail(err.detail) || `Evaluation failed (${evalResp.status})`);
     }
     const evaluation = await evalResp.json();
     return { prompt, evaluation };
