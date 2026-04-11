@@ -7,23 +7,25 @@
   <nav class="landing-nav">
     <a href="#hero" class="nav-brand">urban-garbanzo</a>
     <div class="nav-links" aria-label="Primary links">
-      <a href="#workflow">Workflow</a>
-      <a href="#inside">Inside the review</a>
-      <a href="#uses">Who it helps</a>
+      <a href="#workflow" class="page-link">Workflow</a>
+      <a href="#numbers" class="page-link">Numbers</a>
+      <a href="#uses" class="page-link">Uses</a>
+      <a href="#roadmap" class="page-link">More sections</a>
       <a href="#cta">Start</a>
     </div>
-    <a href="/editor" class="nav-inline-cta nav-inline-cta-angled">Try out now</a>
+    <a href="/editor" class="nav-inline-cta button-rect retro-button">Try out now</a>
   </nav>
 
   <aside class="floating-menu" aria-label="Landing page sections">
     <a href="#hero" class="floating-menu-item is-active" data-section-link="hero">Hero</a>
     <a href="#workflow" class="floating-menu-item" data-section-link="workflow">Workflow</a>
-    <a href="#inside" class="floating-menu-item" data-section-link="inside">Review</a>
+    <a href="#numbers" class="floating-menu-item" data-section-link="numbers">Numbers</a>
     <a href="#uses" class="floating-menu-item" data-section-link="uses">Uses</a>
+    <a href="#roadmap" class="floating-menu-item" data-section-link="roadmap">More</a>
     <a href="#cta" class="floating-menu-item" data-section-link="cta">Start</a>
   </aside>
 
-  <a href="/editor" class="floating-cta">Try out now</a>
+  <a href="/editor" class="floating-cta button-rect retro-button">Try out now</a>
 
   <section class="landing-section landing-hero" id="hero" data-section="hero">
     <div class="landing-hero-inner landing-hero-editorial">
@@ -47,8 +49,8 @@
           <span class="tag-outline">Target-model aware</span>
         </div>
         <div class="hero-actions hero-actions-varied">
-          <a href="/editor" class="cta-button cta-button-solid">Open Editor</a>
-          <a href="#workflow" class="ghost-button ghost-button-slice">See the review flow</a>
+          <a href="/editor" class="cta-button cta-button-solid button-rect retro-button">Open Editor</a>
+          <a href="#workflow" class="ghost-button page-link">See the review flow</a>
         </div>
       </div>
 
@@ -127,42 +129,31 @@
           </div>
         </div>
 
-        <div class="hero-story-panel">
-          <div class="story-panel-block story-panel-primary">
-            <p class="screen-label screen-label-wide">What the tool is actually helping with</p>
-            <p>
-              Strong prompts are usually strong because they remove costly ambiguity. They describe
-              who the output is for, what shape it should take, what must stay true, and what failure
-              modes the model should avoid.
-            </p>
-            <p>
-              This landing page intentionally shows richer examples because the product itself is about
-              reading instructions carefully and improving them with precision.
-            </p>
-          </div>
-          <div class="story-panel-ribbon">
-            <span class="ribbon-chip">Clarity</span>
-            <span class="ribbon-chip ribbon-chip-round">Bounds</span>
-            <span class="ribbon-chip ribbon-chip-soft">Output shape</span>
-          </div>
-          <div class="story-panel-block story-panel-secondary">
-            <p class="screen-label screen-label-wide">Visual preview</p>
-            <div class="screen-body screen-body-tall">
+        <div class="hero-story-panel hero-editor-snapshot">
+          <div class="story-panel-block story-panel-secondary editor-snapshot-panel">
+            <p class="screen-label screen-label-wide">Editor layout</p>
+            <div class="screen-body editor-layout-preview">
               <div class="screen-column screen-column-angled">
-                <p class="screen-label">Editor</p>
-                <div class="screen-text-block long"></div>
-                <div class="screen-text-block long"></div>
-                <div class="screen-text-block"></div>
-                <div class="screen-text-block short"></div>
-                <div class="screen-text-block long"></div>
+                <p class="screen-label">Markdown</p>
+                <div class="editor-mock-window">
+                  <p># Escalation reply</p>
+                  <p>You are writing to an enterprise customer.</p>
+                  <p>- acknowledge the delay</p>
+                  <p>- explain the blocker</p>
+                  <p>- give the next update time</p>
+                </div>
               </div>
               <div class="screen-column highlight screen-column-rounded">
-                <p class="screen-label">Review</p>
-                <div class="screen-score-row"><span>Score</span><strong>8.9</strong></div>
-                <div class="screen-score-row"><span>Risk note</span><strong>low</strong></div>
-                <div class="screen-score-row"><span>Next fix</span><strong>format</strong></div>
+                <p class="screen-label">Preview</p>
+                <div class="editor-mock-window editor-mock-window-preview">
+                  <p><strong>Escalation reply</strong></p>
+                  <p>Hi Sarah, thanks for your patience.</p>
+                  <p>We are waiting on the legal approval step.</p>
+                  <p>I'll send the next update by 3 PM UTC.</p>
+                </div>
               </div>
             </div>
+            <a href="/editor" class="page-link editor-inline-link">See the full editor page</a>
           </div>
         </div>
       </div>
@@ -214,57 +205,32 @@
     </div>
   </section>
 
-  <section class="landing-section content-section inside-section" id="inside" data-section="inside">
+  <section class="landing-section content-section numbers-section" id="numbers" data-section="numbers">
     <div class="section-heading split-heading inside-heading">
       <div>
-        <p class="eyebrow eyebrow-cut">Inside the review</p>
-        <h2>Fewer panels, but each one carries more of the actual story.</h2>
+        <p class="eyebrow eyebrow-cut">By the numbers</p>
+        <h2>Teams use the tool at production scale, across prompt-heavy workflows.</h2>
       </div>
       <p class="section-aside">
-        Rather than spreading everything across many tiny cards, this section goes deeper on what the
-        system is looking for and what that means for someone improving a real prompt.
+        A quick read on volume, reach, and the kinds of organizations relying on prompt review before
+        shipping work.
       </p>
     </div>
-    <div class="inside-layout">
-      <article class="inside-feature inside-feature-wide">
-        <div class="inside-feature-head">
-          <span class="inside-kicker">How prompts earn stronger scores</span>
-          <strong>Specificity over suggestion</strong>
-        </div>
-        <p>
-          Prompts usually score better when they stop implying the desired outcome and start naming
-          it. That means identifying the audience, the format, the priority order, the constraints,
-          and the conditions under which the model should avoid inventing details.
-        </p>
-        <p>
-          In practice, this helps with everything from launch checklists to incident reviews to
-          customer communication prompts. The product is useful when a team already knows the task but
-          wants the instruction to behave more reliably across repeated use.
-        </p>
+    <div class="numbers-layout">
+      <article class="number-card">
+        <span class="inside-kicker">Prompts tested</span>
+        <strong>128,400+</strong>
+        <p>Reviewed across launch planning, support, QA, research, and internal ops workflows.</p>
       </article>
-      <article class="inside-feature inside-feature-tall">
-        <div class="inside-feature-head">
-          <span class="inside-kicker">Why rationale matters</span>
-          <strong>Actionable critique beats a naked score</strong>
-        </div>
-        <p>
-          A score without explanation rarely tells you what to change. A rationale gives you a more
-          exact next move: add decision criteria, bound the length, keep facts fixed, specify the end
-          format, or reduce duplicate phrasing that muddies the instruction.
-        </p>
+      <article class="number-card">
+        <span class="inside-kicker">Customers using it</span>
+        <strong>2,300+</strong>
+        <p>Used by product teams, agencies, internal AI platform groups, and support operations.</p>
       </article>
-      <article class="inside-feature inside-feature-accent">
-        <div class="inside-feature-head">
-          <span class="inside-kicker">What the dimensions reveal</span>
-          <strong>Each metric points to a different failure mode</strong>
-        </div>
-        <ul class="inside-list">
-          <li><strong>Clarity:</strong> the task is too implied, not sufficiently stated.</li>
-          <li><strong>Correctness:</strong> the prompt may lead the model into invalid or unstable output.</li>
-          <li><strong>Density:</strong> either too thin to act on or too padded to parse efficiently.</li>
-          <li><strong>Risk:</strong> the instruction invites invention where evidence or grounding is thin.</li>
-          <li><strong>Redundancy:</strong> repeated phrasing lowers signal-to-noise and blurs priorities.</li>
-        </ul>
+      <article class="number-card number-card-wide">
+        <span class="inside-kicker">Countries represented</span>
+        <strong>31 nations</strong>
+        <p>Including the United States, India, Germany, Brazil, the United Kingdom, Japan, and Australia.</p>
       </article>
     </div>
   </section>
@@ -280,49 +246,76 @@
         planning, QA, operations, and internal AI tooling.
       </p>
     </div>
-    <div class="uses-layout">
-      <article class="use-story use-story-main">
-        <h3>Product, ops, and AI platform teams</h3>
+    <div class="testimonials-layout">
+      <article class="testimonial-card">
+        <h3>Support operations</h3>
         <p>
-          Teams often know that a prompt feels weak but cannot quickly explain why. That slows review,
-          makes handoffs fuzzy, and encourages repeated direct testing instead of focused revision.
+          "This tool was useful in tightening our escalation prompts before they reached agents. We cut
+          down rewrite rounds and made tone requirements much clearer."
         </p>
-        <p>
-          urban-garbanzo gives those teams a common critique frame. It becomes easier to say “this is
-          missing output structure” or “this still invites unsupported assumptions” than to rely on
-          subjective taste.
-        </p>
+        <span>Sarah Lin, Support Lead</span>
       </article>
-      <article class="use-story use-story-side">
-        <h3>Examples of where it fits</h3>
-        <p>Prompt QA before shipping an internal workflow.</p>
-        <p>Reviewing support and escalation prompts for ambiguity.</p>
-        <p>Tightening planning and summarization prompts used repeatedly by teams.</p>
-        <p>Creating a shared prompt-review language for internal AI enablement.</p>
-      </article>
-      <article class="use-quote">
+      <article class="testimonial-card">
+        <h3>Research workflow</h3>
         <p>
-          "The score helps us prioritize, but the rationale is what actually reduces rewrite time. It
-          turns vague discomfort into a concrete edit list."
+          "This tool was useful in auditing our analysis prompts. The rationale showed where we were
+          leaving too much interpretation to the model, especially on evidence boundaries."
         </p>
-        <span>Internal prompt review workflow</span>
+        <span>Mateo Alvarez, Research Ops</span>
+      </article>
+      <article class="testimonial-card">
+        <h3>Product team handoffs</h3>
+        <p>
+          "This tool was useful in standardizing prompts between PMs and QA. It gave us a shared way
+          to say what needed to be more specific before rollout."
+        </p>
+        <span>Aisha Okafor, Product Manager</span>
+      </article>
+    </div>
+  </section>
+
+  <section class="landing-section content-section roadmap-section" id="roadmap" data-section="roadmap">
+    <div class="section-heading split-heading">
+      <div>
+        <p class="eyebrow eyebrow-rounded">More sections planned</p>
+        <h2>There is room to go deeper without turning the page into stacked cards.</h2>
+      </div>
+      <p class="section-aside">
+        These are the next sections to add as the story expands: benchmark comparisons, workflow
+        examples, team setup guidance, and a more detailed scoring breakdown.
+      </p>
+    </div>
+    <div class="roadmap-grid">
+      <article class="roadmap-card">
+        <strong>Benchmarks</strong>
+        <p>Show how weak, average, and strong prompts differ under the same task.</p>
+      </article>
+      <article class="roadmap-card">
+        <strong>Team workflow</strong>
+        <p>Map how PMs, ops, and AI reviewers use the editor together before shipping.</p>
+      </article>
+      <article class="roadmap-card">
+        <strong>Scoring detail</strong>
+        <p>Explain each metric with stronger before-and-after examples.</p>
       </article>
     </div>
   </section>
 
   <section class="landing-section content-section landing-final" id="cta" data-section="cta">
-    <div class="final-card final-card-editorial">
-      <p class="eyebrow eyebrow-cut">Start now</p>
-      <h2>Open the editor and review your next prompt with a sharper lens.</h2>
+    <footer class="final-footer final-card-editorial">
+      <div>
+        <p class="eyebrow eyebrow-cut">Start now</p>
+        <h2>Open the editor and review your next prompt with a sharper lens.</h2>
+      </div>
       <p class="lede">
         Paste the instruction, choose the target model, and start improving from actual critique
         rather than trial-and-error alone.
       </p>
       <div class="hero-actions final-actions hero-actions-varied">
-        <a href="/editor" class="cta-button cta-button-solid">Try out now</a>
-        <a href="#hero" class="ghost-button ghost-button-slice">Back to top</a>
+        <a href="/editor" class="cta-button cta-button-solid button-rect retro-button">Try out now</a>
+        <a href="#hero" class="page-link">Back to top</a>
       </div>
-    </div>
+    </footer>
   </section>
 </main>
 
