@@ -17,6 +17,33 @@ async def test_health_check(client):
     assert payload["status"] == "ok"
     assert "version" in payload
     assert payload["llm_provider"] == "none"
+    assert "database_url" not in payload
+
+
+async def test_chrome_devtools_probe_hidden_by_default(client) -> None:
+    """The Chrome DevTools probe stays hidden unless debug is enabled."""
+
+    response = await client.get("/.well-known/appspecific/com.chrome.devtools.json")
+    assert response.status_code == 404
+
+
+async def test_chrome_devtools_probe_in_debug(monkeypatch) -> None:
+    """The Chrome DevTools probe returns minimal metadata in debug mode."""
+
+    monkeypatch.setattr(settings, "debug", True)
+    app_instance = create_app()
+
+    async with LifespanManager(app_instance):
+        transport = ASGITransport(app=app_instance)
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            response = await client.get("/.well-known/appspecific/com.chrome.devtools.json")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "name": settings.app_name,
+        "version": settings.app_version,
+        "debug": True,
+    }
 
 
 # ---------------------------------------------------------------------------

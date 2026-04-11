@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -67,8 +67,20 @@ def create_app() -> FastAPI:
         return {
             "status": "ok",
             "version": __version__,
-            "database_url": settings.database_url,
             "llm_provider": settings.llm_provider,
+        }
+
+    @app.get("/.well-known/appspecific/com.chrome.devtools.json")
+    async def chrome_devtools() -> dict[str, str | bool]:
+        """Expose minimal metadata for Chrome DevTools when debug mode is on."""
+
+        if not settings.debug:
+            raise HTTPException(status_code=404, detail="Not found")
+
+        return {
+            "name": settings.app_name,
+            "version": settings.app_version,
+            "debug": True,
         }
 
     return app
