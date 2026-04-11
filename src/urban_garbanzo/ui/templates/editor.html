@@ -77,10 +77,6 @@
       <div class="editor-panes">
         <div class="pane pane-editor">
           <div class="pane-label">Markdown</div>
-          <div class="editor-format-note">
-            <span>Editor format example</span>
-            <a href="/" class="page-link">Back to landing</a>
-          </div>
           <div id="codemirror-host"></div>
           <noscript>
             <textarea
@@ -130,25 +126,7 @@
     const hiddenInput = document.getElementById("text-hidden");
     const previewEl = document.getElementById("preview-content");
 
-    const defaultPrompt = `# Prompt goal
-Write a customer update for an enterprise renewal delay.
-
-## Audience
-- Procurement lead
-- Internal account manager
-
-## Requirements
-- Acknowledge the delay clearly
-- Explain the blocker without inventing details
-- Give the next update time
-- Keep the tone calm and direct
-
-## Output format
-1. Subject line
-2. Customer-facing message
-3. Internal handoff note`;
-
-    const initialText = hiddenInput.value || defaultPrompt;
+    const initialText = hiddenInput.value;
     hiddenInput.value = initialText;
 
     function updatePreview(text) {
