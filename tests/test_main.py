@@ -93,6 +93,16 @@ async def test_editor_page_renders(client) -> None:
     assert "codemirror" in body.lower()
 
 
+async def test_editor_page_uses_module_script_for_codemirror(client) -> None:
+    """The editor should not load an ES module through a classic script tag."""
+
+    response = await client.get("/editor")
+    assert response.status_code == 200
+    body = response.text
+    assert '<script type="module">' in body
+    assert 'src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"' not in body
+
+
 async def test_editor_check_returns_scores(client, mock_openai_scores) -> None:
     """POST /editor with a valid prompt renders score cards."""
 
