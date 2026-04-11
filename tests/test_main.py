@@ -93,24 +93,69 @@ async def test_editor_page_renders(client) -> None:
     assert "codemirror" in body.lower()
 
 
-async def test_editor_check_returns_scores(client, mock_openai_scores) -> None:
-    """POST /editor with a valid prompt renders score cards."""
+async def test_editor_page_uses_module_script_for_codemirror(client) -> None:
+    """The editor should not load an ES module through a classic script tag."""
+
+    response = await client.get("/editor")
+    assert response.status_code == 200
+    body = response.text
+    assert '<script type="module">' in body
+    assert 'src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"' not in body
+
+
+async def test_editor_page_has_results_container(client) -> None:
+    """GET /editor page contains the #results-container element for JS-rendered scores."""
+
+    response = await client.get("/editor")
+    assert response.status_code == 200
+    assert 'id="results-container"' in response.text
+
+
+async def test_editor_page_has_loading_state(client) -> None:
+    """GET /editor page contains the #loading-state skeleton element."""
+
+    response = await client.get("/editor")
+    assert response.status_code == 200
+    assert 'id="loading-state"' in response.text
+
+
+async def test_editor_page_button_enabled_by_default(client) -> None:
+    """The Check prompt button is not disabled on initial page load."""
+
+    response = await client.get("/editor")
+    assert response.status_code == 200
+    body = response.text
+    # The button must be present and must NOT carry a disabled attribute
+    assert 'id="check-button"' in body
+    assert "check-button" in body
+    # A disabled attribute on the check button would look like: disabled
+    # We verify the button tag itself doesn't contain 'disabled'
+    import re
+
+    button_match = re.search(r'<button[^>]*id="check-button"[^>]*>', body)
+    assert button_match is not None
+    assert "disabled" not in button_match.group(0)
+
+
+async def test_editor_check_returns_editor_page(client) -> None:
+    """POST /editor re-renders the editor (evaluation is handled via JS + REST API)."""
 
     response = await client.post(
         "/editor",
         data={
-            "text": "Create a product requirements prompt with constraints, acceptance criteria, and review checklist.",
+            "text": "Create a product requirements prompt with constraints.",
             "target_model": "gpt-4.1",
         },
     )
     assert response.status_code == 200
-    assert "Total score" in response.text
-    assert "Mock LLM rationale." in response.text
-    assert "gpt-4.1" in response.text
+    assert "text/html" in response.headers["content-type"]
+    # The page should still have the editor elements
+    assert "Check prompt" in response.text
+    assert 'id="results-container"' in response.text
 
 
-async def test_editor_check_no_target_model(client, mock_openai_scores) -> None:
-    """POST /editor without target_model defaults to 'generic' and still evaluates."""
+async def test_editor_check_no_target_model(client) -> None:
+    """POST /editor without target_model still returns the editor page."""
 
     response = await client.post(
         "/editor",
@@ -119,32 +164,25 @@ async def test_editor_check_no_target_model(client, mock_openai_scores) -> None:
         },
     )
     assert response.status_code == 200
-    assert "Total score" in response.text
-    assert "generic" in response.text
-
-
-async def test_editor_check_short_prompt(client) -> None:
-    """POST /editor with a prompt under 10 chars returns a 422 with an inline error."""
-
-    response = await client.post(
-        "/editor",
-        data={"text": "short"},
-    )
-    assert response.status_code == 422
-    assert "Prompt text must be at least 10 characters long." in response.text
+    assert "text/html" in response.headers["content-type"]
+    assert "Check prompt" in response.text
 
 
 async def test_editor_check_persists_prompt(client, mock_openai_scores) -> None:
-    """Submitting the editor form persists the prompt and evaluation to the DB."""
+    """Prompts submitted via the REST API are persisted to the DB."""
 
     response = await client.post(
-        "/editor",
-        data={
+        "/api/v1/prompts",
+        json={
             "text": "Create a reusable incident response prompt for SRE handoffs with measurable acceptance criteria.",
             "target_model": "gpt-4.1",
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
+    prompt_id = response.json()["id"]
+
+    eval_response = await client.post(f"/api/v1/prompts/{prompt_id}/evaluate")
+    assert eval_response.status_code == 200
 
     prompts_response = await client.get("/api/v1/prompts")
     payload = prompts_response.json()
@@ -180,12 +218,11 @@ async def test_editor_bootstraps_fresh_sqlite_db(
         transport = ASGITransport(app=app_instance)
         async with AsyncClient(transport=transport, base_url="http://testserver") as client:
             response = await client.post(
-                "/editor",
-                data={
+                "/api/v1/prompts",
+                json={
                     "text": "Build an onboarding prompt with measurable success criteria and edge cases.",
                     "target_model": "gpt-4.1",
                 },
             )
 
-    assert response.status_code == 200
-    assert "Total score" in response.text
+    assert response.status_code == 201
