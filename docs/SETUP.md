@@ -225,7 +225,7 @@ python -m aerich upgrade
 
 - `GET /` renders the landing page
 - `GET /editor` renders the markdown editor
-- `POST /editor` evaluates a prompt and renders scores in the same page
+- `POST /editor` re-renders the editor page; browser-based evaluation is performed via the JSON API
 
 ## LLM Configuration
 
