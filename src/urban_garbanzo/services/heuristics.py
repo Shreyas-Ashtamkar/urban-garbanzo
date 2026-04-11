@@ -255,7 +255,7 @@ def score_hallucination_risk(text: str) -> float:
     """Estimate hallucination risk from certainty keywords *and* content emptiness.
 
     A prompt that provides no grounding context forces the model to invent
-    everything.  The ``emptiness_risk`` component — ``(1 - quality) * 90`` —
+    everything.  The ``emptiness_risk`` component — ``(1 - quality) * 92`` —
     pushes the score toward 95 for meaningless inputs, reflecting the near-
     certainty of hallucination.
     """
