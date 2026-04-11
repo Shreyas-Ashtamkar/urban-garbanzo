@@ -110,11 +110,60 @@ make run
 
 Available endpoints:
 
+- Landing page: `http://localhost:8000/`
+- Editor: `http://localhost:8000/editor`
 - Swagger: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 - Health: `http://localhost:8000/health`
 
-## 8. Run the Tests
+## 8. Use the Web UI
+
+The app now exposes a small server-rendered product UI in addition to the JSON API.
+
+### Landing page
+
+- `GET /` renders the marketing and workflow overview page
+- The landing page links into the editor, shows sample prompt evaluations, and explains the review flow
+- It is informational only and does not submit prompts directly
+
+### Editor page
+
+- `GET /editor` renders a two-pane markdown editor and live preview
+- The editor uses CodeMirror 6 for the markdown pane and `marked` for preview rendering
+- When the text field is empty, the page bootstraps a sample prompt structure so users can see the expected format immediately
+
+Default editor format example:
+
+```md
+# Prompt goal
+Write a customer update for an enterprise renewal delay.
+
+## Audience
+- Procurement lead
+- Internal account manager
+
+## Requirements
+- Acknowledge the delay clearly
+- Explain the blocker without inventing details
+- Give the next update time
+- Keep the tone calm and direct
+
+## Output format
+1. Subject line
+2. Customer-facing message
+3. Internal handoff note
+```
+
+### Editor form behavior
+
+- `POST /editor` evaluates the submitted prompt and re-renders the page with scores and rationale
+- `target_model` is optional in the form UI and defaults to `generic` when blank
+- Prompt text is trimmed before validation and storage
+- Prompt text must be at least `10` characters
+- Prompt text must be `32,000` characters or fewer
+- Validation errors are returned inline on the editor page with HTTP `422`
+
+## 9. Run the Tests
 
 ```bash
 python -m pytest
@@ -171,6 +220,12 @@ python -m aerich upgrade
 - `GET /api/v1/leaderboard/users/best`
 - `GET /api/v1/leaderboard/users/average`
 
+## Implemented UI Surface
+
+- `GET /` renders the landing page
+- `GET /editor` renders the markdown editor
+- `POST /editor` evaluates a prompt and renders scores in the same page
+
 ## LLM Configuration
 
 Set one of the following modes in `.env`:
@@ -222,7 +277,8 @@ Change `API_PORT` in `.env` or start uvicorn manually on another port.
 
 ## Next Steps
 
-1. Start the API and inspect `/docs`
-2. Create prompts and trigger evaluations
-3. Generate follow-up migrations as models evolve
-4. Add auth when anonymous submission is no longer sufficient
+1. Start the API and inspect `/` and `/editor`
+2. Inspect `/docs` for the JSON API surface
+3. Create prompts and trigger evaluations
+4. Generate follow-up migrations as models evolve
+5. Add auth when anonymous submission is no longer sufficient
