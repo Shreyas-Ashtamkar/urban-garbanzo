@@ -1433,6 +1433,88 @@ code {
   transform: translateY(-1px);
 }
 
+.check-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===================================================================
+   Score color coding
+   =================================================================== */
+
+.score-good strong {
+  color: #4ade80; /* green-400 */
+}
+
+.score-okay strong {
+  color: #facc15; /* yellow-400 */
+}
+
+.score-bad strong {
+  color: #f87171; /* red-400 */
+}
+
+/* ===================================================================
+   Loading spinner
+   =================================================================== */
+
+.loading-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(247, 247, 251, 0.3);
+  border-top-color: #f7f7fb;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===================================================================
+   Skeleton shimmer cards
+   =================================================================== */
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.score-skeleton-card {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(88, 88, 112, 0.26);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.score-skeleton-label {
+  height: 10px;
+  border-radius: 999px;
+  width: 60%;
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.score-skeleton-value {
+  height: 28px;
+  border-radius: 999px;
+  width: 40%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .editor-banner {
   width: 100%;
 }

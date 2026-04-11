@@ -10,54 +10,40 @@
   </nav>
 
   <main class="editor-main">
-    {% if result %}
-    <section class="score-bar" id="score-bar">
-      <div class="score-meta">
-        <div class="score-meta-item">
-          <span class="meta-label">Target model</span>
-          <strong>{{ result.prompt.target_model }}</strong>
-        </div>
-        <div class="score-meta-item">
-          <span class="meta-label">Provider</span>
-          <strong>{{ result.evaluation.llm_provider }}</strong>
-        </div>
-      </div>
+    <!-- Loading state: shown while evaluation is in-flight -->
+    <section class="score-bar" id="loading-state" style="display:none;" aria-live="polite" aria-label="Evaluating prompt">
       <div class="score-grid">
-        <div class="score-card accent">
-          <span>Total score</span>
-          <strong>{{ result.evaluation.scores.total_score }}</strong>
+        <div class="score-skeleton-card">
+          <div class="score-skeleton-label"></div>
+          <div class="score-skeleton-value"></div>
         </div>
-        <div class="score-card">
-          <span>Clarity</span>
-          <strong>{{ result.evaluation.scores.clarity }}</strong>
+        <div class="score-skeleton-card">
+          <div class="score-skeleton-label"></div>
+          <div class="score-skeleton-value"></div>
         </div>
-        <div class="score-card">
-          <span>Correctness</span>
-          <strong>{{ result.evaluation.scores.correctness }}</strong>
+        <div class="score-skeleton-card">
+          <div class="score-skeleton-label"></div>
+          <div class="score-skeleton-value"></div>
         </div>
-        <div class="score-card">
-          <span>Info density</span>
-          <strong>{{ result.evaluation.scores.information_density }}</strong>
+        <div class="score-skeleton-card">
+          <div class="score-skeleton-label"></div>
+          <div class="score-skeleton-value"></div>
         </div>
-        <div class="score-card danger">
-          <span>Hallucination risk</span>
-          <strong>{{ result.evaluation.scores.hallucination_risk }}</strong>
+        <div class="score-skeleton-card">
+          <div class="score-skeleton-label"></div>
+          <div class="score-skeleton-value"></div>
         </div>
-        <div class="score-card danger">
-          <span>Redundancy</span>
-          <strong>{{ result.evaluation.scores.redundancy }}</strong>
+        <div class="score-skeleton-card">
+          <div class="score-skeleton-label"></div>
+          <div class="score-skeleton-value"></div>
         </div>
       </div>
-      {% if result.evaluation.rationale %}
-      <div class="score-rationale">
-        <span class="meta-label">Rationale</span>
-        <p>{{ result.evaluation.rationale }}</p>
-      </div>
-      {% endif %}
     </section>
-    {% endif %}
 
-    <form method="post" action="/editor" id="editor-form">
+    <!-- Results container: populated by JS after evaluation -->
+    <section class="score-bar" id="results-container" style="display:none;"></section>
+
+    <form method="post" action="/editor" id="editor-form" novalidate>
       <div class="editor-toolbar">
         <label class="editor-model-field">
           <span class="meta-label">Target model</span>
@@ -71,9 +57,7 @@
         </label>
         <button type="submit" class="check-button" id="check-button">Check prompt</button>
       </div>
-      {% if error_message %}
-      <div class="banner error editor-banner">{{ error_message }}</div>
-      {% endif %}
+      <div id="error-banner" class="banner error editor-banner" style="display:none;"></div>
       <div class="editor-panes">
         <div class="pane pane-editor">
           <div class="pane-label">Markdown</div>
@@ -104,6 +88,136 @@
   const CM_BASE = "https://esm.sh/@codemirror";
   const MARKED  = "https://esm.sh/marked@12";
 
+  // -----------------------------------------------------------------------
+  // Score colour helpers
+  // -----------------------------------------------------------------------
+
+  /** Fields where a LOWER value is better (inverted scale). */
+  const INVERTED_FIELDS = new Set(["hallucination_risk", "redundancy"]);
+
+  /**
+   * Return a CSS class name based on the numeric score and whether the
+   * metric is inverted (lower = better).
+   */
+  function scoreClass(field, value) {
+    const v = Number(value);
+    if (INVERTED_FIELDS.has(field)) {
+      // ≤30 → good, 31-60 → okay, >60 → bad
+      if (v <= 30) return "score-good";
+      if (v <= 60) return "score-okay";
+      return "score-bad";
+    }
+    // ≥70 → good, 40-69 → okay, <40 → bad
+    if (v >= 70) return "score-good";
+    if (v >= 40) return "score-okay";
+    return "score-bad";
+  }
+
+  // -----------------------------------------------------------------------
+  // DOM helpers
+  // -----------------------------------------------------------------------
+
+  function showError(msg) {
+    const banner = document.getElementById("error-banner");
+    banner.textContent = msg;
+    banner.style.display = "";
+  }
+
+  function clearError() {
+    const banner = document.getElementById("error-banner");
+    banner.textContent = "";
+    banner.style.display = "none";
+  }
+
+  function renderResults(prompt, evaluation) {
+    const container = document.getElementById("results-container");
+    const scores = evaluation.scores;
+
+    const cards = [
+      { field: "total_score",         label: "Total score",        value: scores.total_score,         extra: "accent" },
+      { field: "clarity",             label: "Clarity",            value: scores.clarity },
+      { field: "correctness",         label: "Correctness",        value: scores.correctness },
+      { field: "information_density", label: "Info density",       value: scores.information_density },
+      { field: "hallucination_risk",  label: "Hallucination risk", value: scores.hallucination_risk,  extra: "danger" },
+      { field: "redundancy",          label: "Redundancy",         value: scores.redundancy,           extra: "danger" },
+    ];
+
+    const cardHTML = cards.map(({ field, label, value, extra }) => {
+      const colorCls = scoreClass(field, value);
+      const baseCls = extra ? `score-card ${extra} ${colorCls}` : `score-card ${colorCls}`;
+      return `<div class="${baseCls}">
+        <span>${label}</span>
+        <strong>${value}</strong>
+      </div>`;
+    }).join("");
+
+    const metaHTML = `
+      <div class="score-meta">
+        <div class="score-meta-item">
+          <span class="meta-label">Target model</span>
+          <strong>${escHtml(prompt.target_model)}</strong>
+        </div>
+        <div class="score-meta-item">
+          <span class="meta-label">Provider</span>
+          <strong>${escHtml(evaluation.llm_provider)}</strong>
+        </div>
+      </div>`;
+
+    const rationaleHTML = evaluation.rationale
+      ? `<div class="score-rationale">
+           <span class="meta-label">Rationale</span>
+           <p>${escHtml(evaluation.rationale)}</p>
+         </div>`
+      : "";
+
+    container.innerHTML = metaHTML
+      + `<div class="score-grid">${cardHTML}</div>`
+      + rationaleHTML;
+    container.style.display = "";
+    container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // -----------------------------------------------------------------------
+  // Async evaluation
+  // -----------------------------------------------------------------------
+
+  async function evaluatePrompt(text, targetModel) {
+    // Step 1: create the prompt
+    const createResp = await fetch("/api/v1/prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, target_model: targetModel || "generic" }),
+    });
+    if (!createResp.ok) {
+      const err = await createResp.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to create prompt (${createResp.status})`);
+    }
+    const prompt = await createResp.json();
+
+    // Step 2: evaluate it
+    const evalResp = await fetch(`/api/v1/prompts/${prompt.id}/evaluate`, {
+      method: "POST",
+    });
+    if (!evalResp.ok) {
+      const err = await evalResp.json().catch(() => ({}));
+      throw new Error(err.detail || `Evaluation failed (${evalResp.status})`);
+    }
+    const evaluation = await evalResp.json();
+    return { prompt, evaluation };
+  }
+
+  // -----------------------------------------------------------------------
+  // Main init
+  // -----------------------------------------------------------------------
+
   async function init() {
     const [
       { EditorState },
@@ -124,6 +238,9 @@
     const host = document.getElementById("codemirror-host");
     const hiddenInput = document.getElementById("text-hidden");
     const previewEl = document.getElementById("preview-content");
+    const checkBtn = document.getElementById("check-button");
+    const loadingEl = document.getElementById("loading-state");
+    const resultsEl = document.getElementById("results-container");
 
     const initialText = hiddenInput.value;
     hiddenInput.value = initialText;
@@ -159,9 +276,40 @@
     // Initial preview render
     updatePreview(initialText);
 
-    // Sync hidden input before form submit (covers edge cases)
-    document.getElementById("editor-form").addEventListener("submit", () => {
+    // -----------------------------------------------------------------------
+    // Async form submit with single-flight guard
+    // -----------------------------------------------------------------------
+
+    let isSubmitting = false;
+
+    document.getElementById("editor-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (isSubmitting) return;          // reject duplicate clicks
+      isSubmitting = true;
+
+      // Sync hidden input from editor
       hiddenInput.value = view.state.doc.toString();
+      const text = hiddenInput.value.trim();
+      const targetModel = document.getElementById("target-model").value.trim();
+
+      clearError();
+      resultsEl.style.display = "none";
+      loadingEl.style.display = "";
+      checkBtn.disabled = true;
+      checkBtn.innerHTML = '<span class="loading-spinner"></span>Checking…';
+
+      try {
+        const { prompt, evaluation } = await evaluatePrompt(text, targetModel);
+        renderResults(prompt, evaluation);
+      } catch (err) {
+        showError(err.message || "An unexpected error occurred.");
+      } finally {
+        loadingEl.style.display = "none";
+        checkBtn.disabled = false;
+        checkBtn.textContent = "Check prompt";
+        isSubmitting = false;
+      }
     });
   }
 
