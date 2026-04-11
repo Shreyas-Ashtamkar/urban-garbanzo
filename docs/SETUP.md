@@ -156,12 +156,13 @@ Write a customer update for an enterprise renewal delay.
 
 ### Editor form behavior
 
-- `POST /editor` evaluates the submitted prompt and re-renders the page with scores and rationale
+- The editor UI uses JavaScript to create prompts with `POST /api/v1/prompts`
+- After a prompt is created, the UI triggers evaluation with `POST /api/v1/prompts/{id}/evaluate`
 - `target_model` is optional in the form UI and defaults to `generic` when blank
 - Prompt text is trimmed before validation and storage
 - Prompt text must be at least `10` characters
-- Prompt text must be `32,000` characters or fewer
-- Validation errors are returned inline on the editor page with HTTP `422`
+- Prompt text must be `10,000` characters or fewer
+- Validation errors come from the API endpoints and are surfaced by the UI during the async flow
 
 ## 9. Run the Tests
 
