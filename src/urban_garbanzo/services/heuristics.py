@@ -6,6 +6,11 @@ two foundational signal extractors -- :func:`_vocabulary_diversity` and
 no actionable content, etc.) and penalise them toward the extremes rather
 than collapsing to mid-range defaults.
 
+Clarity, correctness, and information density use a **multiplicative quality
+gate**: the raw surface-level score is multiplied by ``semantic_quality``
+(floored at a small minimum).  This ensures that text with zero meaningful
+content cannot reach mid-range scores regardless of surface-level properties.
+
 Formula reference (per dimension)
 =================================
 
@@ -14,10 +19,11 @@ semantic_quality      = diversity * (unique_informative / 8)  (0.0-1.0, soft-cap
 
 clarity
 -------
-  readability       = clamp(textstat.flesch_reading_ease)     * 0.45
-  sentence_score    = clamp(100 - excess_avg_len * 2.5)      * 0.25
-  quality_score     = semantic_quality * 100                  * 0.30
-  final             = clamp(readability*0.45 + sentence*0.25 + quality*0.30)
+  readability       = clamp(textstat.flesch_reading_ease)
+  sentence_score    = clamp(100 - max(avg_sentence_len - 18, 0) * 2.5)
+  raw_clarity       = readability * 0.65 + sentence_score * 0.35
+  quality_factor    = max(semantic_quality, 0.01)
+  final             = clamp(raw_clarity * quality_factor)
 
 correctness
 -----------
@@ -28,21 +34,23 @@ correctness
 information_density
 -------------------
   unique_ratio      = unique_informative / informative_count  (0.0-1.0)
+  adjusted_ratio    = unique_ratio ^ 1.5                      (power-curve penalty)
   density_bonus     = min(unique_informative, 60) / 60 * 20   (only unique tokens)
-  final             = clamp(unique_ratio * 80 + density_bonus)
+  raw_density       = adjusted_ratio * 80 + density_bonus
+  quality_factor    = max(semantic_quality, 0.01)
+  final             = clamp(raw_density * quality_factor)
 
 hallucination_risk
 ------------------
   keyword_risk      = risk_ratio * 500 + vague_markers * 12
-  emptiness_risk    = (1 - semantic_quality) * 90             (new: lack of content → risk)
+  emptiness_risk    = (1 - semantic_quality) * 92             (lack of content → risk)
   final             = clamp(5 + keyword_risk + emptiness_risk)
 
 redundancy
 ----------
   token_ratio       = repeated_token_count / total_tokens
   sentence_ratio    = repeated_sentences / total_sentences
-  final             = clamp(token_ratio * 95 + sentence_ratio * 35)
-                       (coefficient raised from 60→95 to reach extremes)
+  final             = clamp(token_ratio * 110 + sentence_ratio * 35)
 """
 
 from __future__ import annotations
@@ -215,9 +223,11 @@ def score_correctness(text: str) -> float:
 def score_information_density(text: str) -> float:
     """Estimate information density using unique non-stopword token ratio.
 
-    The density bonus now counts only *unique* informative tokens rather than
-    raw informative token count, so repeating the same word N times adds no
-    bonus.
+    The density bonus counts only *unique* informative tokens so repeating
+    the same word N times adds no bonus.  A multiplicative semantic-quality
+    gate (consistent with clarity and correctness) ensures that trivially
+    "unique" but meaningless inputs (e.g. a single word, or pure repetition)
+    cannot reach mid-range scores.
     """
 
     tokens = tokenize(text)
@@ -228,12 +238,17 @@ def score_information_density(text: str) -> float:
     if not informative_tokens:
         return 1.0
 
+    quality = _semantic_quality(tokens, informative_tokens)
+
     unique_informative = set(informative_tokens)
     unique_ratio = len(unique_informative) / max(len(informative_tokens), 1)
     # Apply power curve: low diversity penalised more steeply (0.1 → 0.032)
     adjusted_ratio = unique_ratio**1.5
     density_bonus = min(len(unique_informative), 60) / 60 * 20.0
-    return clamp_score((adjusted_ratio * 80.0) + density_bonus)
+    raw_density = (adjusted_ratio * 80.0) + density_bonus
+    # Multiplicative gate: meaningless text (quality ~ 0) → score ~ 1
+    quality_factor = max(quality, 0.01)
+    return clamp_score(raw_density * quality_factor)
 
 
 def score_hallucination_risk(text: str) -> float:
