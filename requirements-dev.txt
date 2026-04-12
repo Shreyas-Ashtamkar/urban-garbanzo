@@ -1,5 +1,6 @@
 # Development dependencies
 -r requirements.txt
+-e .
 
 aiosqlite>=0.20.0,<1.0.0
 asgi-lifespan>=2.1.0,<3.0.0
