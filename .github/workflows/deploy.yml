@@ -73,7 +73,7 @@ jobs:
           ssh-keyscan -H raspi >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Wait for Tailscale connectivity
-        run: tailscale ping --timeout 60s raspi
+        run: tailscale ping --timeout 60s --until-direct=false raspi
 
       - name: Generate .env file
         run: |
