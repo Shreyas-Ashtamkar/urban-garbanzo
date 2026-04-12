@@ -70,10 +70,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H raspi >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Wait for Tailscale connectivity
-        run: tailscale ping --timeout 60s --until-direct=false raspi
+        run: |
+          tailscale ping --timeout 60s --until-direct=false raspi
+          ssh-keyscan -H raspi >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Generate .env file
         run: |
@@ -132,15 +133,17 @@ jobs:
         run: |
           IMAGE_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o ConnectTimeout=30"
+
           # Ensure deploy directory exists on the Pi
-          ssh -o StrictHostKeyChecking=no deploy@raspi "mkdir -p /home/deploy/urban-garbanzo"
+          ssh $SSH_OPTS deploy@raspi "mkdir -p /home/deploy/urban-garbanzo"
 
           # Copy .env and docker-compose.yml to the Pi
-          scp -o StrictHostKeyChecking=no /tmp/deploy.env deploy@raspi:/home/deploy/urban-garbanzo/.env
-          scp -o StrictHostKeyChecking=no /tmp/docker-compose.yml deploy@raspi:/home/deploy/urban-garbanzo/docker-compose.yml
+          scp $SSH_OPTS /tmp/deploy.env deploy@raspi:/home/deploy/urban-garbanzo/.env
+          scp $SSH_OPTS /tmp/docker-compose.yml deploy@raspi:/home/deploy/urban-garbanzo/docker-compose.yml
 
           # SSH in and run deployment commands
-          ssh -o StrictHostKeyChecking=no deploy@raspi << ENDSSH
+          ssh -T $SSH_OPTS deploy@raspi << ENDSSH
           set -e
 
           echo "==> Logging into GHCR..."
