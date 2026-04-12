@@ -65,36 +65,34 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-      - name: Set up SSH key
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-      - name: Wait for Tailscale connectivity
-        run: |
+          # Confirm Tailscale can reach raspi (DERP relay is fine)
           tailscale ping --timeout 60s --until-direct=false raspi
 
-          # Resolve the explicit Tailscale IPv4 address — Tailscale IPs are always in 100.x.x.x
-          RASPI_IP=$(tailscale ip -4 raspi 2>/dev/null)
+          # Try upgrading to a direct WireGuard tunnel — far more reliable than DERP
+          echo "Attempting direct Tailscale connection..."
+          tailscale ping --timeout 15s --until-direct=true raspi 2>&1 || echo "Direct unavailable — using DERP relay"
+
+          # Resolve Tailscale IP and populate known_hosts
+          RASPI_IP=$(tailscale ip -4 raspi 2>/dev/null || true)
           if [ -z "$RASPI_IP" ]; then
-            RASPI_IP=$(tailscale ip raspi 2>/dev/null | grep -E '^100\.' | head -1)
-          fi
-          if [ -z "$RASPI_IP" ]; then
-            echo "WARNING: Could not resolve Tailscale IPv4 for raspi, falling back to hostname"
+            echo "Could not resolve Tailscale IPv4 — falling back to hostname"
             RASPI_IP="raspi"
           fi
-          echo "raspi Tailscale IP: $RASPI_IP"
+          echo "Target: $RASPI_IP"
           echo "RASPI_IP=$RASPI_IP" >> "$GITHUB_ENV"
+          ssh-keyscan -T 10 -H "$RASPI_IP" 2>/dev/null >> ~/.ssh/known_hosts || true
 
-          # Scan by both hostname and IP so known_hosts covers whichever address SSH resolves to.
-          # Also acts as a TCP connectivity probe — if keyscan produces 0 entries, port 22 may be blocked.
-          ssh-keyscan -T 10 -H raspi "$RASPI_IP" 2>/dev/null >> ~/.ssh/known_hosts || true
-          echo "Known hosts entries: $(wc -l < ~/.ssh/known_hosts)"
-
-      - name: Generate .env file
+      - name: Prepare deploy files
         run: |
-          cat > /tmp/deploy.env <<EOF
+          IMAGE_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          cat > /tmp/.env <<EOF
           DATABASE_URL=postgres://ug_user:ug_pass@db:5432/urban_garbanzo
           DATABASE_GENERATE_SCHEMAS=false
           API_HOST=0.0.0.0
@@ -111,15 +109,7 @@ jobs:
           HEURISTIC_WEIGHT=0.3
           LLM_WEIGHT=0.7
           EOF
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
-          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
-          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
 
-      - name: Generate docker-compose.yml for production
-        run: |
-          IMAGE_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           cat > /tmp/docker-compose.yml <<EOF
           services:
             db:
@@ -145,75 +135,69 @@ jobs:
             pg_data:
           EOF
 
+          # Deploy script — unquoted heredoc so runner-side env vars are baked in
+          cat > /tmp/deploy.sh <<DEPLOY
+          #!/bin/bash
+          set -euo pipefail
+          echo "==> GHCR login"
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+          echo "==> Pull image"
+          docker pull ghcr.io/${IMAGE_LOWER}:latest
+          echo "==> Deploy"
+          cd /home/deploy/urban-garbanzo
+          docker compose down || true
+          docker compose up -d
+          docker image prune -f
+          echo "==> Status"
+          docker compose ps
+          DEPLOY
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+
       - name: Deploy to Raspberry Pi
         run: |
-          IMAGE_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-
-          # Use explicit Tailscale IP to avoid any DNS inconsistency
+          set -euo pipefail
           RASPI="${RASPI_IP:-raspi}"
-          echo "Connecting to raspi at: $RASPI"
 
-          # Use a bash array to avoid word-splitting issues with SSH options.
-          # StrictHostKeyChecking=accept-new: verify keys for known hosts (populated by ssh-keyscan above),
-          # accept and add keys for new hosts — more secure than =no while still non-interactive.
           SSH_OPTS=(
             -i "$HOME/.ssh/id_ed25519"
             -o BatchMode=yes
             -o StrictHostKeyChecking=accept-new
-            -o ServerAliveInterval=15
-            -o ServerAliveCountMax=4
-            -o ConnectTimeout=30
+            -o ConnectTimeout=15
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=5
+            -o ServerAliveCountMax=3
+            -o IPQoS=none
           )
 
-          # Verify TCP port 22 is reachable before SSH attempts (nc with /dev/tcp fallback)
-          echo "==> Checking TCP connectivity to $RASPI:22 ..."
-          if command -v nc >/dev/null 2>&1; then
-            nc -zv -w 10 "$RASPI" 22 2>&1
-          else
-            timeout 10 bash -c 'echo > /dev/tcp/'"$RASPI"'/22' 2>&1
-          fi || { echo "Port 22 unreachable on $RASPI"; exit 1; }
-
-          # Probe with verbose SSH on the first attempt to surface any auth/handshake issues
-          echo "==> Probing SSH connectivity (verbose) ..."
-          ssh -v "${SSH_OPTS[@]}" "deploy@$RASPI" "echo SSH_OK" 2>&1 || {
-            echo "SSH probe failed — aborting deploy"
-            exit 1
+          # Retry with exponential backoff — essential for DERP relay flakiness
+          retry() {
+            local max=$1; shift
+            local delay=3
+            for attempt in $(seq 1 "$max"); do
+              echo "[attempt $attempt/$max] $*"
+              if "$@"; then return 0; fi
+              if [ "$attempt" -lt "$max" ]; then
+                echo "  Failed — retrying in ${delay}s..."
+                sleep "$delay"
+                delay=$((delay * 2))
+              fi
+            done
+            echo "FAILED after $max attempts: $*"
+            return 1
           }
 
-          # Write the deploy script locally (local heredoc, no SSH stdin piping)
-          cat > /tmp/urban-garbanzo-deploy.sh << SCRIPT
-          #!/bin/bash
-          set -e
+          # 1. Create target directory (retry up to 5 times)
+          retry 5 ssh "${SSH_OPTS[@]}" "deploy@$RASPI" "mkdir -p /home/deploy/urban-garbanzo"
 
-          echo "==> Logging into GHCR..."
-          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+          # 2. SCP all files in one call (retry up to 5 times)
+          retry 5 scp "${SSH_OPTS[@]}" /tmp/.env /tmp/docker-compose.yml /tmp/deploy.sh "deploy@$RASPI:/home/deploy/urban-garbanzo/"
 
-          echo "==> Pulling latest image..."
-          docker pull ghcr.io/${IMAGE_LOWER}:latest
-
-          echo "==> Restarting services..."
-          cd /home/deploy/urban-garbanzo
-          docker compose down || true
-          docker compose up -d
-
-          echo "==> Pruning old images..."
-          docker image prune -f
-
-          echo "==> Deploy complete!"
-          docker compose ps
-          SCRIPT
-          chmod +x /tmp/urban-garbanzo-deploy.sh
-
-          # Ensure deploy directory exists on the Pi
-          ssh "${SSH_OPTS[@]}" "deploy@$RASPI" "mkdir -p /home/deploy/urban-garbanzo"
-
-          # Copy all files to the Pi
-          scp "${SSH_OPTS[@]}" /tmp/deploy.env "deploy@$RASPI:/home/deploy/urban-garbanzo/.env"
-          scp "${SSH_OPTS[@]}" /tmp/docker-compose.yml "deploy@$RASPI:/home/deploy/urban-garbanzo/docker-compose.yml"
-          scp "${SSH_OPTS[@]}" /tmp/urban-garbanzo-deploy.sh "deploy@$RASPI:/tmp/urban-garbanzo-deploy.sh"
-
-          # Execute the deploy script and always clean up the temp file
-          ssh "${SSH_OPTS[@]}" "deploy@$RASPI" "bash /tmp/urban-garbanzo-deploy.sh; EXIT=\$?; rm -f /tmp/urban-garbanzo-deploy.sh; exit \$EXIT"
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
+          # 3. Execute deploy script (retry up to 3 times), then clean up separately
+          retry 3 ssh "${SSH_OPTS[@]}" "deploy@$RASPI" "cd /home/deploy/urban-garbanzo && bash deploy.sh"
+          ssh "${SSH_OPTS[@]}" "deploy@$RASPI" "rm -f /home/deploy/urban-garbanzo/deploy.sh" || true
