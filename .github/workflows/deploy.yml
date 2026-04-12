@@ -133,17 +133,11 @@ jobs:
         run: |
           IMAGE_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o ConnectTimeout=30"
+          SSH_OPTS="-i $HOME/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o ConnectTimeout=30"
 
-          # Ensure deploy directory exists on the Pi
-          ssh $SSH_OPTS deploy@raspi "mkdir -p /home/deploy/urban-garbanzo"
-
-          # Copy .env and docker-compose.yml to the Pi
-          scp $SSH_OPTS /tmp/deploy.env deploy@raspi:/home/deploy/urban-garbanzo/.env
-          scp $SSH_OPTS /tmp/docker-compose.yml deploy@raspi:/home/deploy/urban-garbanzo/docker-compose.yml
-
-          # SSH in and run deployment commands
-          ssh -T $SSH_OPTS deploy@raspi << ENDSSH
+          # Write the deploy script locally (local heredoc, no SSH stdin piping)
+          cat > /tmp/urban-garbanzo-deploy.sh << SCRIPT
+          #!/bin/bash
           set -e
 
           echo "==> Logging into GHCR..."
@@ -162,7 +156,19 @@ jobs:
 
           echo "==> Deploy complete!"
           docker compose ps
-          ENDSSH
+          SCRIPT
+          chmod +x /tmp/urban-garbanzo-deploy.sh
+
+          # Ensure deploy directory exists on the Pi
+          ssh $SSH_OPTS deploy@raspi "mkdir -p /home/deploy/urban-garbanzo"
+
+          # Copy all files to the Pi
+          scp $SSH_OPTS /tmp/deploy.env deploy@raspi:/home/deploy/urban-garbanzo/.env
+          scp $SSH_OPTS /tmp/docker-compose.yml deploy@raspi:/home/deploy/urban-garbanzo/docker-compose.yml
+          scp $SSH_OPTS /tmp/urban-garbanzo-deploy.sh deploy@raspi:/tmp/urban-garbanzo-deploy.sh
+
+          # Execute the deploy script and always clean up the temp file
+          ssh $SSH_OPTS deploy@raspi "bash /tmp/urban-garbanzo-deploy.sh; EXIT=\$?; rm -f /tmp/urban-garbanzo-deploy.sh; exit \$EXIT"
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
