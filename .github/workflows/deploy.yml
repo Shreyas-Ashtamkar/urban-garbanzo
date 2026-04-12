@@ -2,7 +2,7 @@ name: Deploy to Raspberry Pi
 
 on:
   push:
-    branches: [main, copilot/check-failing-action]
+    branches: [main]
   workflow_dispatch:
 
 env:
