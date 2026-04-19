@@ -9,9 +9,13 @@ urban-garbanzo is a backend service for submitting prompts, evaluating them with
 - Prompt submission and retrieval
 - On-demand prompt evaluation
 - Evaluation history per prompt
+- Prompt list pagination and sorting (`page`, `size`, `sort_by`)
 - Prompt leaderboard
+- Prompt leaderboard filtering by metric (`dimension`)
 - User leaderboard by best score
 - User leaderboard by average score
+- Server-rendered landing page (`/`) and Markdown editor (`/editor`)
+- In-browser async evaluation flow with loading states and rationale rendering
 
 Authentication is intentionally not included yet. Prompt ownership is tracked with an optional anonymous `submitter_tag`.
 
@@ -191,14 +195,21 @@ ANTHROPIC_API_KEY=your_key_here
 
 ## API Endpoints
 
+### UI
+
+- `GET /`
+- `GET /editor`
+- `POST /editor`
+
 ### Health
 
 - `GET /health`
+- `GET /.well-known/appspecific/com.chrome.devtools.json` (debug mode only)
 
 ### Prompts
 
 - `POST /api/v1/prompts`
-- `GET /api/v1/prompts`
+- `GET /api/v1/prompts` (`page`, `size`, `sort_by=created_at|total_score`)
 - `GET /api/v1/prompts/{prompt_id}`
 - `POST /api/v1/prompts/{prompt_id}/evaluate`
 - `DELETE /api/v1/prompts/{prompt_id}`
@@ -210,7 +221,7 @@ ANTHROPIC_API_KEY=your_key_here
 
 ### Leaderboards
 
-- `GET /api/v1/leaderboard/prompts`
+- `GET /api/v1/leaderboard/prompts` (`limit`, `dimension=total_score|clarity|correctness|information_density|hallucination_risk|redundancy`)
 - `GET /api/v1/leaderboard/users/best`
 - `GET /api/v1/leaderboard/users/average`
 
