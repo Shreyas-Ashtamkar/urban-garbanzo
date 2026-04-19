@@ -1,11 +1,12 @@
 # urban-garbanzo
 
-**Stop guessing if your prompts work.** urban-garbanzo evaluates prompts across clarity, correctness, information density, hallucination risk, and redundancy, stores evaluation history, and exposes prompt and user leaderboards over a FastAPI API.
+**Stop guessing if your prompts work.** urban-garbanzo is a FastAPI app with a built-in prompt review UI, evaluation history, and leaderboards for prompt quality.
 
 ## Overview
 
-urban-garbanzo is a backend service for submitting prompts, evaluating them with a hybrid scoring pipeline, and ranking the results. The current implementation supports:
+urban-garbanzo is a UI-first prompt evaluation app backed by FastAPI and Tortoise ORM. The current implementation supports:
 
+- A landing page and in-browser markdown editor
 - Prompt submission and retrieval
 - On-demand prompt evaluation
 - Evaluation history per prompt
@@ -37,9 +38,9 @@ The evaluator currently supports a hybrid architecture:
 
 - FastAPI
 - Tortoise ORM
-- PostgreSQL for development and production
+- SQLite in-memory by default; PostgreSQL for development and production
 - Aerich for migrations
-- pytest + pytest-asyncio
+- pytest + pytest-asyncio + Playwright
 - Ruff
 - Black
 - mypy
@@ -241,9 +242,11 @@ curl "http://localhost:8000/api/v1/leaderboard/prompts?limit=10"
 | Command | Description |
 |---|---|
 | `make install-dev` | Install development dependencies |
-| `make env` | Copy `.env.example` to `.env` on Windows |
+| `make env` | Copy `.env.example` to `.env` |
 | `make run` | Start the FastAPI dev server |
-| `make test` | Run tests |
+| `make test` | Run unit tests with coverage |
+| `make test-e2e` | Run Playwright browser tests |
+| `make test-all` | Run unit and browser tests |
 | `make lint` | Run Ruff and mypy |
 | `make format` | Run Black and Ruff autofix |
 | `make migrate` | Create a new Aerich migration |
@@ -251,18 +254,39 @@ curl "http://localhost:8000/api/v1/leaderboard/prompts?limit=10"
 
 ## Testing
 
+### Unit Tests
+
 ```bash
-python -m pytest
+python -m pytest tests
 ```
 
 The test suite uses temporary SQLite databases for isolation and speed. Development and production remain Postgres-oriented.
 
+### Browser E2E Tests
+
+The browser suite uses Playwright against a live FastAPI subprocess.
+Install the Chromium browser once before running E2E tests:
+
+```bash
+pip install -r requirements-dev.txt
+python -m playwright install chromium
+```
+
+Then run the browser suite explicitly:
+
+```bash
+python -m pytest --override-ini addopts="--strict-markers -v --tb=short" tests_e2e
+```
+
+The browser tests boot the FastAPI app with SQLite and `LLM_PROVIDER=none`, then run deterministic browser coverage for `/` and `/editor`.
+
 ## Quality Checks
 
 ```bash
-python -m ruff check src tests
+python -m ruff check src tests tests_e2e
 python -m mypy src
-python -m pytest
+python -m black src tests tests_e2e
+python -m pytest tests
 ```
 
 ## Current Limitations
@@ -270,7 +294,6 @@ python -m pytest
 - No authentication yet
 - No background job queue for evaluations
 - No rate limiting
-- No frontend UI in this repository
 
 ## Contributing
 

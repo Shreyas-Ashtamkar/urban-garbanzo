@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-This guide reflects the current implementation of urban-garbanzo: a FastAPI service backed by Tortoise ORM, PostgreSQL, Aerich migrations, and an async pytest suite.
+This guide reflects the current implementation of urban-garbanzo: a FastAPI app with a built-in UI, Tortoise ORM, SQLite by default (PostgreSQL for development/production), Aerich migrations, unit tests, and Playwright browser coverage.
 
 ## Requirements
 
@@ -118,7 +118,7 @@ Available endpoints:
 
 ## 8. Use the Web UI
 
-The app now exposes a small server-rendered product UI in addition to the JSON API.
+The app is built around a server-rendered product UI backed by the JSON API.
 
 ### Landing page
 
@@ -130,29 +130,7 @@ The app now exposes a small server-rendered product UI in addition to the JSON A
 
 - `GET /editor` renders a two-pane markdown editor and live preview
 - The editor uses CodeMirror 6 for the markdown pane and `marked` for preview rendering
-- When the text field is empty, the page bootstraps a sample prompt structure so users can see the expected format immediately
-
-Default editor format example:
-
-```md
-# Prompt goal
-Write a customer update for an enterprise renewal delay.
-
-## Audience
-- Procurement lead
-- Internal account manager
-
-## Requirements
-- Acknowledge the delay clearly
-- Explain the blocker without inventing details
-- Give the next update time
-- Keep the tone calm and direct
-
-## Output format
-1. Subject line
-2. Customer-facing message
-3. Internal handoff note
-```
+- When the text field is empty, the preview starts empty and updates as the editor changes
 
 ### Editor form behavior
 
@@ -166,8 +144,17 @@ Write a customer update for an enterprise renewal delay.
 
 ## 9. Run the Tests
 
+Unit tests:
+
 ```bash
-python -m pytest
+python -m pytest tests
+```
+
+Browser E2E tests:
+
+```bash
+python -m playwright install chromium
+python -m pytest --override-ini addopts="--strict-markers -v --tb=short" tests_e2e
 ```
 
 Notes:
@@ -181,6 +168,8 @@ Notes:
 ```bash
 make run
 make test
+make test-e2e
+make test-all
 make lint
 make format
 make typecheck
@@ -192,10 +181,11 @@ make db-upgrade
 Direct equivalents:
 
 ```bash
-python -m pytest
-python -m ruff check src tests
+python -m pytest tests
+python -m pytest --override-ini addopts="--strict-markers -v --tb=short" tests_e2e
+python -m ruff check src tests tests_e2e
 python -m mypy src
-python -m black src tests
+python -m black src tests tests_e2e
 python -m aerich migrate --name "describe_change"
 python -m aerich upgrade
 ```
