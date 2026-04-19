@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -22,11 +23,15 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Initialize and close external resources for the application."""
 
     logger.info("Starting %s %s", settings.app_name, __version__)
-    await init_db()
+    try:
+        await init_db()
+    except Exception:
+        logger.exception("Failed to initialize the database")
+        raise
     yield
     await close_db()
     logger.info("Shutting down %s", settings.app_name)
@@ -49,8 +54,8 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Accept", "Authorization", "Content-Type"],
     )
 
     register_exception_handlers(app)

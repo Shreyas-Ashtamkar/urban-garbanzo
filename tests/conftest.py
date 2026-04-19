@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 import pytest
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
+from pydantic import SecretStr
 from urban_garbanzo.config import settings
 from urban_garbanzo.main import create_app
 
@@ -32,7 +33,7 @@ def mock_openai_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch the OpenAI provider to return deterministic scores."""
 
     monkeypatch.setattr(settings, "llm_provider", "openai")
-    monkeypatch.setattr(settings, "openai_api_key", "test-key")
+    monkeypatch.setattr(settings, "openai_api_key", SecretStr("test-key"))
 
     from urban_garbanzo.services.llm import OpenAIProvider
 

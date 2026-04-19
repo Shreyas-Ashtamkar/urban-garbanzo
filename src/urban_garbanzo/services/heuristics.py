@@ -262,7 +262,7 @@ def score_hallucination_risk(text: str) -> float:
 
     tokens = tokenize(text)
     if not tokens:
-        return 1.0
+        return 97.0  # No tokens → model must invent everything → near-max risk.
 
     informative = [t for t in tokens if t not in STOPWORDS]
     quality = _semantic_quality(tokens, informative)
@@ -287,7 +287,7 @@ def score_redundancy(text: str) -> float:
 
     tokens = tokenize(text)
     if not tokens:
-        return 1.0
+        return 97.0  # No tokens → treat as fully redundant / contentless.
 
     counts = Counter(tokens)
     repeated_tokens = sum(count - 1 for count in counts.values() if count > 1)

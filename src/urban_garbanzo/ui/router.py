@@ -59,6 +59,10 @@ async def editor(request: Request) -> HTMLResponse:
 
 @router.post("/editor", response_class=HTMLResponse)
 async def editor_post(request: Request) -> HTMLResponse:
-    """Re-render the editor page (evaluation is handled via the REST API by JS)."""
+    """Re-render the editor page.
+
+    Evaluation is handled client-side via the REST API.  This route exists
+    as a no-JS fallback so the ``<form>`` element has a valid action target.
+    """
 
     return render_editor(request)

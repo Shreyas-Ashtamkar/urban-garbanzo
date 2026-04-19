@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from urban_garbanzo.dependencies import get_evaluation_or_404, get_prompt_or_404
 from urban_garbanzo.models import Evaluation, Prompt
@@ -29,10 +29,11 @@ async def get_evaluation(
 @router.get("/prompts/{prompt_id}/evaluations", response_model=EvaluationHistoryResponse)
 async def list_prompt_evaluations(
     prompt: Annotated[Prompt, Depends(get_prompt_or_404)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> EvaluationHistoryResponse:
-    """Return the complete evaluation history for a prompt."""
+    """Return evaluation history for a prompt, most recent first."""
 
     evaluations = sorted(prompt.evaluations, key=lambda item: item.evaluated_at, reverse=True)
     return EvaluationHistoryResponse(
-        items=[build_evaluation_read(evaluation) for evaluation in evaluations]
+        items=[build_evaluation_read(evaluation) for evaluation in evaluations[:limit]]
     )

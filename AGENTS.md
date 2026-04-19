@@ -13,7 +13,7 @@
 
 Note: The virtual Python environment is located in `venv/`. The terminal environment is Windows PowerShell, so commands and paths should be used accordingly (e.g., use `.\` for relative paths).
 
-```bash
+```powershell
 # Clone and setup
 git clone https://github.com/Shreyas-Ashtamkar/urban-garbanzo.git
 cd urban-garbanzo
@@ -26,7 +26,7 @@ python -m venv venv
 make install-dev  # or: pip install -r requirements-dev.txt
 
 # Create .env
-make env  # or: cp .env.example .env
+make env  # or: copy .env.example .env
 ```
 
 ## Running Locally
@@ -40,9 +40,11 @@ API docs at http://localhost:8000/docs
 ## Testing
 
 ```bash
-make test           # Run tests with coverage
-pytest              # Direct pytest
-pytest tests/       # Specific test path
+make test           # Run unit tests with coverage
+make test-e2e       # Run Playwright browser tests
+make test-all       # Run unit and browser tests
+pytest tests/       # Unit tests only
+pytest tests_e2e/   # Browser tests only
 ```
 
 ## Linting & Formatting
@@ -60,10 +62,11 @@ Tools: ruff (linting + import sorting), black (formatting), mypy (type checking)
 
 Before committing, ensure:
 1. `make test` passes
-2. `make lint` passes
-3. `make format` applied
+2. `make test-e2e` passes
+3. `make lint` passes
+4. `make format` applied
 
-CI runs: lint.yml (ruff, black, mypy), test.yml (pytest with coverage)
+CI runs: lint.yml (ruff, black, mypy), test.yml (unit tests with coverage plus Playwright E2E)
 
 ## Project Structure
 
@@ -72,12 +75,13 @@ src/urban_garbanzo/    # Main package
 ├── main.py            # FastAPI app
 ├── config.py          # Settings
 └── __init__.py
-tests/                 # Test suite
+tests/                 # Unit and API tests
+tests_e2e/             # Playwright browser tests
 docs/                  # Documentation
 .github/workflows/    # CI pipelines
 ```
 
 ## Database
 
-- Development: SQLite (default, no setup)
-- Production: PostgreSQL (set DATABASE_URL in .env)
+- Default: SQLite in-memory (no setup required)
+- Development/Production: PostgreSQL (set DATABASE_URL in .env)

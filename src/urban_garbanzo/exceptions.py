@@ -52,7 +52,8 @@ class LLMUnavailable(AppError):
 async def app_error_handler(_: Request, exc: Exception) -> JSONResponse:
     """Serialize application errors into a consistent JSON response."""
 
-    assert isinstance(exc, AppError)
+    if not isinstance(exc, AppError):
+        return JSONResponse(status_code=500, content={"detail": "Unexpected application error"})
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 

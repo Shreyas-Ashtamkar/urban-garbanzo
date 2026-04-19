@@ -1,13 +1,14 @@
 """Database configuration and lifecycle helpers."""
 
 from collections.abc import Sequence
+from typing import Any
 
 from tortoise import Tortoise
 
 from .config import settings
 
 
-def get_tortoise_config() -> dict[str, object]:
+def get_tortoise_config() -> dict[str, Any]:
     """Build the Tortoise ORM configuration from current settings."""
 
     return {
