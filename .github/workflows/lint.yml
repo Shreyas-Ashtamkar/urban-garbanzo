@@ -28,10 +28,10 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Lint with ruff
-        run: python -m ruff check src tests
+        run: python -m ruff check src tests tests_e2e
 
       - name: Format check with black
-        run: python -m black --check src tests
+        run: python -m black --check src tests tests_e2e
 
       - name: Type check with mypy
         run: python -m mypy src
