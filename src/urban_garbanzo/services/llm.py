@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from anthropic import AsyncAnthropic
+    from openai import AsyncOpenAI
 
 from urban_garbanzo.config import Settings
 from urban_garbanzo.exceptions import EvaluationFailed, LLMUnavailable
@@ -103,13 +107,17 @@ class OpenAIProvider:
         self.api_key = api_key
         self.model = model
         self.base_url = base_url
+        self._client: AsyncOpenAI | None = None
 
-    def _get_client(self) -> Any:
-        from openai import AsyncOpenAI
+    def _get_client(self) -> AsyncOpenAI:
+        if self._client is None:
+            from openai import AsyncOpenAI as _AsyncOpenAI
 
-        if self.base_url:
-            return AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
-        return AsyncOpenAI(api_key=self.api_key)
+            if self.base_url:
+                self._client = _AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+            else:
+                self._client = _AsyncOpenAI(api_key=self.api_key)
+        return self._client
 
     async def score(self, prompt_text: str, target_model: str) -> LLMScoreResult:
         if not self.api_key:
@@ -134,7 +142,12 @@ class OpenAIProvider:
         if not content:
             raise EvaluationFailed("OpenAI returned an empty response")
 
-        return normalize_llm_payload(json.loads(content))
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise EvaluationFailed("OpenAI returned invalid JSON") from exc
+
+        return normalize_llm_payload(payload)
 
 
 class AnthropicProvider:
@@ -143,11 +156,14 @@ class AnthropicProvider:
     def __init__(self, api_key: str, model: str) -> None:
         self.api_key = api_key
         self.model = model
+        self._client: AsyncAnthropic | None = None
 
-    def _get_client(self) -> Any:
-        from anthropic import AsyncAnthropic
+    def _get_client(self) -> AsyncAnthropic:
+        if self._client is None:
+            from anthropic import AsyncAnthropic as _AsyncAnthropic
 
-        return AsyncAnthropic(api_key=self.api_key)
+            self._client = _AsyncAnthropic(api_key=self.api_key)
+        return self._client
 
     async def score(self, prompt_text: str, target_model: str) -> LLMScoreResult:
         if not self.api_key:
@@ -176,7 +192,12 @@ class AnthropicProvider:
         if not content:
             raise EvaluationFailed("Anthropic returned an empty response")
 
-        return normalize_llm_payload(json.loads(content))
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise EvaluationFailed("Anthropic returned invalid JSON") from exc
+
+        return normalize_llm_payload(payload)
 
 
 def create_llm_provider(app_settings: Settings) -> LLMProvider | None:
@@ -186,18 +207,26 @@ def create_llm_provider(app_settings: Settings) -> LLMProvider | None:
         return None
 
     if app_settings.llm_provider == "openai":
-        api_key = app_settings.openai_api_key
+        api_key = (
+            app_settings.openai_api_key.get_secret_value() if app_settings.openai_api_key else ""
+        )
+        # When using a local Ollama-compatible endpoint, a placeholder key is acceptable.
         if not api_key and app_settings.openai_base_url:
             api_key = "ollama"
         return OpenAIProvider(
-            api_key=api_key or "",
+            api_key=api_key,
             model=app_settings.openai_model,
             base_url=app_settings.openai_base_url,
         )
 
     if app_settings.llm_provider == "anthropic":
+        api_key = (
+            app_settings.anthropic_api_key.get_secret_value()
+            if app_settings.anthropic_api_key
+            else ""
+        )
         return AnthropicProvider(
-            api_key=app_settings.anthropic_api_key or "",
+            api_key=api_key,
             model=app_settings.anthropic_model,
         )
 

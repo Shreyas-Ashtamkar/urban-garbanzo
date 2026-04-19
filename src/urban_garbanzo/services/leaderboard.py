@@ -42,9 +42,23 @@ async def get_prompt_leaderboard(
     limit: int,
     dimension: PromptDimension = "total_score",
 ) -> list[LeaderboardPromptEntry]:
-    """Return the highest-ranked prompts by latest evaluation."""
+    """Return the highest-ranked prompts by latest evaluation.
 
-    prompts = await Prompt.filter(deleted_at=None).prefetch_related("user", "evaluations")
+    Leaderboards require in-memory sorting because the sort key lives on the
+    latest evaluation, but the queryset is bounded by ``limit`` on output so
+    the working set stays small for typical usage.
+    """
+
+    # Cap the working set: fetch at most ``limit * 5`` prompts so we don't
+    # load the entire table, while still having enough to produce ``limit``
+    # results after filtering for evaluated prompts.
+    fetch_limit = max(limit * 5, 100)
+    prompts = (
+        await Prompt.filter(deleted_at=None)
+        .order_by("-created_at")
+        .limit(fetch_limit)
+        .prefetch_related("user", "evaluations")
+    )
     scored_prompts: list[tuple[Prompt, Evaluation]] = []
     for prompt in prompts:
         latest = get_latest_evaluation(prompt)
@@ -71,11 +85,18 @@ async def get_prompt_leaderboard(
 async def get_user_leaderboard(
     mode: Literal["best", "average"], limit: int
 ) -> list[LeaderboardUserEntry]:
-    """Return user rankings based on each user's latest prompt evaluations."""
+    """Return user rankings based on each user's latest prompt evaluations.
 
-    prompts = await Prompt.filter(deleted_at=None, user_id__not_isnull=True).prefetch_related(
-        "user",
-        "evaluations",
+    Similar to the prompt leaderboard, the aggregation requires in-memory
+    grouping.  The queryset is bounded to keep the working set manageable.
+    """
+
+    fetch_limit = max(limit * 10, 200)
+    prompts = (
+        await Prompt.filter(deleted_at=None, user_id__not_isnull=True)
+        .order_by("-created_at")
+        .limit(fetch_limit)
+        .prefetch_related("user", "evaluations")
     )
     grouped_scores: dict[str, list[float]] = defaultdict(list)
     prompt_counts: dict[str, int] = defaultdict(int)

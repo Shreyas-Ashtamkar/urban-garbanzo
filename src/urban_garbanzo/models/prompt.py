@@ -28,7 +28,7 @@ class Prompt(Model):
     )
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
-    deleted_at = fields.DatetimeField(null=True)
+    deleted_at = fields.DatetimeField(null=True, db_index=True)
 
     evaluations: ReverseRelation[Evaluation]
 

@@ -3,8 +3,10 @@
 from typing import Literal
 from urllib.parse import urlsplit, urlunsplit
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from urban_garbanzo import __version__
 
 
 class Settings(BaseSettings):
@@ -13,7 +15,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
     app_name: str = "urban-garbanzo"
-    app_version: str = "0.1.0"
+    app_version: str = __version__
     debug: bool = False
     api_host: str = "0.0.0.0"
     api_port: int = 8000
@@ -24,8 +26,8 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:3000", "http://localhost:8000"]
     )
     llm_provider: Literal["none", "openai", "anthropic"] = "none"
-    openai_api_key: str | None = None
-    anthropic_api_key: str | None = None
+    openai_api_key: SecretStr | None = None
+    anthropic_api_key: SecretStr | None = None
     openai_model: str = "gpt-4o-mini"
     anthropic_model: str = "claude-3-5-haiku-latest"
     openai_base_url: str | None = None

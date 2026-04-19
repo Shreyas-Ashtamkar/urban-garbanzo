@@ -51,23 +51,31 @@ async def list_prompts(
 ) -> PromptListResponse:
     """List prompts and their latest evaluations."""
 
-    prompts = await Prompt.filter(deleted_at=None).prefetch_related("user", "evaluations")
-    prompt_reads = [build_prompt_read(prompt) for prompt in prompts]
-    sorted_prompts = sorted(
-        prompt_reads,
-        key=lambda prompt: (
-            prompt.created_at
-            if sort_by == "created_at"
-            else (prompt.latest_evaluation.scores.total_score if prompt.latest_evaluation else -1)
-        ),
-        reverse=True,
-    )
+    base_qs = Prompt.filter(deleted_at=None)
+    total = await base_qs.count()
 
-    start = (page - 1) * size
-    end = start + size
-    return PromptListResponse(
-        items=sorted_prompts[start:end], total=len(sorted_prompts), page=page, size=size
-    )
+    if sort_by == "created_at":
+        # DB-level pagination for the common case.
+        offset = (page - 1) * size
+        prompts = (
+            await base_qs.order_by("-created_at")
+            .offset(offset)
+            .limit(size)
+            .prefetch_related("user", "evaluations")
+        )
+        prompt_reads = [build_prompt_read(prompt) for prompt in prompts]
+    else:
+        # total_score depends on evaluation data — must sort in memory.
+        prompts = await base_qs.prefetch_related("user", "evaluations")
+        prompt_reads = sorted(
+            [build_prompt_read(prompt) for prompt in prompts],
+            key=lambda p: (p.latest_evaluation.scores.total_score if p.latest_evaluation else -1),
+            reverse=True,
+        )
+        start = (page - 1) * size
+        prompt_reads = prompt_reads[start : start + size]
+
+    return PromptListResponse(items=prompt_reads, total=total, page=page, size=size)
 
 
 @router.get("/{prompt_id}", response_model=PromptRead)
