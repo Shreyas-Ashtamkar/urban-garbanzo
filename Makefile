@@ -1,4 +1,4 @@
-.PHONY: help install dev install-dev clean test lint format typecheck precommit run docs env migrate db-upgrade
+.PHONY: help install dev install-dev clean test test-unit test-e2e test-all lint format typecheck precommit run docs env migrate db-upgrade
 
 VENV_PYTHON := $(strip $(shell powershell -NoProfile -Command "$${venv} = Get-ChildItem -Path . -Directory -Force -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $$_.FullName 'pyvenv.cfg') } | Select-Object -First 1 -ExpandProperty FullName; if ($${venv}) { Join-Path $${venv} 'Scripts\\python.exe' }"))
 PYTHON ?= $(if $(VENV_PYTHON),$(VENV_PYTHON),python)
@@ -14,7 +14,9 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  make run              Run development server"
-	@echo "  make test             Run tests with coverage"
+	@echo "  make test             Run unit tests with coverage"
+	@echo "  make test-e2e         Run Playwright browser tests"
+	@echo "  make test-all         Run unit and browser tests"
 	@echo "  make lint             Run linters (ruff, mypy)"
 	@echo "  make format           Auto-format code (black, ruff)"
 	@echo "  make typecheck        Run type checking (mypy)"
@@ -45,18 +47,28 @@ clean:
 	powershell -NoProfile -Command "Remove-Item -Force -Recurse build,dist,.eggs,.coverage -ErrorAction SilentlyContinue"
 
 test:
+	"$(PYTHON)" -m pytest tests
+
+test-unit:
 	"$(PYTHON)" -m pytest
+
+test-e2e:
+	"$(PYTHON)" -m pytest --override-ini addopts="--strict-markers -v --tb=short" tests_e2e
+
+test-all:
+	"$(PYTHON)" -m pytest tests
+	"$(PYTHON)" -m pytest --override-ini addopts="--strict-markers -v --tb=short" tests_e2e
 
 test-watch:
 	"$(PYTHON)" -m pytest_watch
 
 lint:
-	"$(PYTHON)" -m ruff check src tests
+	"$(PYTHON)" -m ruff check src tests tests_e2e
 	"$(PYTHON)" -m mypy src
 
 format:
-	"$(PYTHON)" -m black src tests
-	"$(PYTHON)" -m ruff check --fix src tests
+	"$(PYTHON)" -m black src tests tests_e2e
+	"$(PYTHON)" -m ruff check --fix src tests tests_e2e
 
 typecheck:
 	"$(PYTHON)" -m mypy src
